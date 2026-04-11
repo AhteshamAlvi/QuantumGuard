@@ -1,296 +1,200 @@
 # QuantumGuard
-Quantum Encryption Secure Fileshare Simulation
 
-QuantumGuard is a distributed, interactive system that demonstrates the fundamental difference between **classical cryptography** and **quantum key distribution (QKD)** under adversarial conditions.
+**Quantum vs Classical Encryption — A Live Demonstration**
 
-It simulates three independent devices communicating over a network while an active attacker attempts to intercept the communication.
+QuantumGuard is a real-time, multi-device web application that demonstrates why quantum key distribution (QKD) is fundamentally more secure than classical cryptography.
 
-The system shows, in real time:
+Three users connect from separate devices — or browser tabs — and play out a file transfer scenario with a man-in-the-middle attacker. The system shows, live:
 
-- Classical systems can be **compromised silently**
-- Quantum systems **detect intrusion and refuse to proceed**
-
----
-
-## Core Idea
-
-Traditional cryptography relies on computational difficulty. If an attacker is powerful enough, security can fail without detection.
-
-Quantum communication changes the model:
-
-> Instead of preventing interception, it guarantees that interception is **detectable**.
-
-QuantumGuard demonstrates this concept through a live, multi-device simulation.
+- **Classical mode**: the attacker silently steals everything
+- **Quantum mode**: the attacker is detected and the transfer is blocked
 
 ---
 
-## System Overview
+## How It Works
 
-QuantumGuard runs across **three devices**, each assigned a role through the UI:
+### The Setup
 
-| Role       | Description                          |
-|------------|--------------------------------------|
-| **Origin** | Sends the file                       |
-| **Target** | Receives the file                   |
-| **Intruder** | Acts as a man-in-the-middle attacker |
+Three devices join a shared session, each picking a role:
 
----
+| Role | What they do |
+|------|-------------|
+| **Origin** | Uploads and sends a file |
+| **Target** | Receives the file |
+| **Intruder** | Sits between them as a man-in-the-middle |
 
-## Network Architecture
+All traffic is routed `Origin → Intruder → Target`. The Intruder can observe, intercept, and tamper — depending on the mode.
 
-All communication is routed through the Intruder:
+### Phase 1 — Key Exchange
 
+**Classical mode:** Origin sends a shared key. The Intruder copies it silently. Both sides proceed as if nothing happened.
 
-Origin → Intruder → Target
-Target → Intruder → Origin
-
-
-The Intruder acts as a proxy and can:
-
-- observe traffic
-- intercept key exchange
-- attempt attacks depending on mode
-
----
-
-## Protocol Design
-
-Communication occurs in two phases:
-
----
-
-### Phase 1 — Key Establishment
-
-#### Classical Mode
-- A shared key is established
-- Intruder intercepts the key silently
-- Communication proceeds normally
-
-#### Quantum Mode (BB84 Simulation)
-- Key exchange is performed using quantum-inspired states
-- Intruder interference introduces measurement errors
-- The system computes **QBER (Quantum Bit Error Rate)**
-
-
-QBER = (# mismatched bits) / (checked bits)
-
-
-- If QBER exceeds a threshold:
-  - Key is rejected
-  - Exchange is retried
-- This loop continues until a secure key is established
-
----
+**Quantum mode (BB84):** Origin and Target exchange a key using simulated quantum states. If the Intruder tries to measure the qubits, it introduces errors. The system computes the **Quantum Bit Error Rate (QBER)** — if it's above 11%, the key is rejected and the transfer never starts.
 
 ### Phase 2 — File Transfer
 
-Only executed after a valid key is established:
+Only happens if a key is established. Origin encrypts the file, sends it in chunks through the Intruder, and Target decrypts and verifies integrity via SHA-256.
 
-1. Origin encrypts the file
-2. File is sent in chunks
-3. Target decrypts and reconstructs the file
-4. Integrity is verified using SHA-256 hashing
+### The Outcomes
 
----
-
-## Attack Model
-
-### Classical Mode
-
-The Intruder:
-- captures the key
-- allows communication to proceed
-- decrypts the file without detection
-
-Result:
-- Target receives the correct file
-- Intruder also obtains the full file
-- No alert is triggered
+| Mode | Intruder | Result |
+|------|----------|--------|
+| Classical | Active | File delivered. Attacker has a full copy. No one knows. |
+| Quantum | Active | Key rejected. Transfer aborted. Attacker gets nothing. |
+| Quantum | Passive | Secure transfer succeeds. |
 
 ---
 
-### Quantum Mode
+## Project Structure
 
-The Intruder:
-- attempts to measure transmitted quantum states
-- introduces errors due to basis mismatch
-
-Result:
-- QBER increases
-- Key exchange fails
-- File transfer is **blocked**
-
-If the Intruder remains passive:
-- Key exchange succeeds
-- File transfer proceeds securely
+```
+QuantumGuard/
+├── backend/                  Python (FastAPI)
+│   ├── app.py                Entry point, CORS, route registration
+│   ├── requirements.txt
+│   ├── routes/
+│   │   ├── session.py        REST: create/join sessions
+│   │   └── ws.py             WebSocket: real-time device communication
+│   ├── models/
+│   │   ├── session.py        Session state models
+│   │   └── messages.py       WebSocket message schemas
+│   ├── services/
+│   │   ├── session_manager.py  In-memory session store
+│   │   ├── key_exchange.py     Classical + BB84 key exchange flows
+│   │   ├── file_transfer.py    Chunked encrypted file relay
+│   │   └── intruder.py         MITM attack simulation
+│   ├── qkd/
+│   │   ├── bb84.py           BB84 protocol simulation
+│   │   ├── metrics.py        QBER calculation
+│   │   └── utils.py          Random bit generation
+│   └── crypto/
+│       ├── encrypt.py        Symmetric encryption/decryption
+│       └── hash.py           SHA-256 integrity verification
+├── frontend/                 React + TypeScript (Vite)
+│   ├── src/
+│   │   ├── App.tsx           Router + provider setup
+│   │   ├── types.ts          Shared type definitions
+│   │   ├── context/
+│   │   │   └── SessionContext.tsx   Global state (session + metrics)
+│   │   ├── hooks/
+│   │   │   ├── useSession.ts       Session create/join/role
+│   │   │   ├── useWebSocket.ts     Real-time backend connection
+│   │   │   └── useSimulation.ts    Simulation lifecycle + demo stubs
+│   │   ├── components/
+│   │   │   ├── SessionHeader.tsx    Top bar: session info + status
+│   │   │   ├── RoleSelect.tsx       Pick Origin/Target/Intruder
+│   │   │   ├── ModeSelect.tsx       Classical vs Quantum toggle
+│   │   │   ├── FileUpload.tsx       Drag-and-drop file picker
+│   │   │   ├── DeviceStatus.tsx     Connected devices indicator
+│   │   │   ├── MetricsPanel.tsx     QBER, key attempts, integrity
+│   │   │   ├── IntruderControls.tsx Attack toggle + intensity slider
+│   │   │   └── TransferStatus.tsx   Phase-aware result display
+│   │   └── pages/
+│   │       ├── SessionPage.tsx      Create/join session, pick role
+│   │       └── SimulationPage.tsx   Main simulation view
+│   └── ...config files
+├── README.md
+└── LICENSE
+```
 
 ---
 
-## Outcomes
-
-| Mode       | Intruder Action | Result |
-|------------|----------------|--------|
-| Classical  | Active         | File delivered, data stolen silently |
-| Quantum    | Active         | Key rejected, transfer aborted       |
-| Quantum    | Passive        | Secure transfer succeeds             |
-
----
-
-## Key Insight
-
-QuantumGuard demonstrates:
-
-> Classical systems continue operating under compromise, while quantum systems refuse to proceed until security is guaranteed.
-
----
-
-## Tech Stack
-
-### Backend (Python)
-- FastAPI — API and WebSocket server
-- NumPy — BB84 quantum simulation
-- Uvicorn — ASGI server
-
-### Frontend (React + TypeScript)
-- React (Vite)
-- WebSockets for real-time updates
-- modular component-based UI
-
----
-
-## Installation
+## Getting Started
 
 ### Prerequisites
 
-- Node.js (v18+)
-- Python 3.9+
+- **Node.js** v18+
+- **Python** 3.9+
 
----
+### 1. Clone
 
-### 1. Clone Repository
+```bash
+git clone https://github.com/AhteshamAlvi/QuantumGuard.git
+cd QuantumGuard
+```
 
+### 2. Frontend
 
-git clone https://github.com/your-username/quantumguard.git
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-cd quantumguard
+The app runs at **http://localhost:5173**. The frontend includes demo stubs — you can test the full UI flow without the backend.
 
+### 3. Backend
 
----
-
-### 2. Setup Backend
-
-
+```bash
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 uvicorn app:app --reload
+```
 
-
----
-
-### 3. Setup Frontend
-
-
-cd frontend
-npm install
-npm run dev
-
+The API runs at **http://localhost:8000**.
 
 ---
 
-## 🚀 Running the System
+## Usage
 
-Open the frontend on **three separate devices or browser tabs**:
+### Local Testing (single machine)
 
+1. Run `npm run dev` in `frontend/`
+2. Open **three browser tabs** at `http://localhost:5173`
+3. **Tab 1**: Create Session — note the 6-character code
+4. **Tab 2 & 3**: Join Session using the code
+5. Each tab picks a different role: Origin, Target, Intruder
+6. Select a mode (Classical or Quantum) and start
 
-http://localhost:5173
+### Multi-Device (the demo)
 
-
----
-
-### Steps
-
-1. Select a role on each device:
-   - Origin
-   - Target
-   - Intruder
-
-2. Connect the devices using the UI
-
-3. Choose mode:
-   - Classical
-   - Quantum
-
-4. Start the simulation
+1. Run both the frontend and backend on a host machine
+2. Open `http://<host-ip>:5173` on three different devices on the same network
+3. One device creates a session, the others join with the code
+4. Assign roles and run the simulation
 
 ---
 
-## Intruder Controls
+## What Each Role Sees
 
-The Intruder UI allows:
+**Origin** — File upload, mode selection, transfer progress, integrity status.
 
-- toggling attack mode
-- setting interception intensity
-- observing key capture and file access
+**Target** — Waiting state during key exchange, received file status, hash verification.
 
----
-
-## Metrics Displayed
-
-- QBER (Quantum mode)
-- Key exchange attempts
-- File integrity (hash verification)
-- Intruder success status
-- Transfer success / failure
+**Intruder** — Attack toggle, interception intensity slider, live intelligence feed showing whether the key and file were captured.
 
 ---
 
-## Example Scenarios
+## Metrics
+
+| Metric | Shown in |
+|--------|----------|
+| QBER (Quantum Bit Error Rate) | Quantum mode — bar + percentage |
+| Key Exchange Attempts | Both modes |
+| Key Established | Both modes |
+| Intruder Detected | Quantum mode |
+| File Integrity (SHA-256) | After transfer |
+| Transfer Success/Failure | After simulation |
 
 ---
 
-### Classical Attack
+## Tech Stack
 
-- Transfer completes
-- Target receives file
-- Intruder decrypts file silently
-
----
-
-### Quantum Attack
-
-- Key exchange repeatedly fails
-- Transfer never begins
-- Intruder gains nothing
-
----
-
-### Quantum Secure Transfer
-
-- Key successfully established
-- File transferred securely
-- Intruder unable to access data
-
----
-
-## Future Work
-
-- Real quantum hardware integration
-- Advanced visualization dashboard
-- Multiple attackers
-- Network topology simulation
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19, TypeScript, Vite |
+| Backend | Python, FastAPI, WebSockets |
+| QKD Simulation | NumPy, BB84 protocol |
+| Real-time | WebSocket (native) |
 
 ---
 
 ## License
 
-MIT License
+MIT
 
----
-
-## Author:
+## Author
 
 Ahtesham Alvi
-
----
