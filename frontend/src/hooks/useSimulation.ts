@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useSessionContext } from "../context/SessionContext";
 import { useWebSocket } from "./useWebSocket";
+import { fileToBits } from "./useTransferStream";
 import type { Mode, IntruderSettings } from "../types";
 
 /**
@@ -15,6 +16,7 @@ export function useSimulation() {
   const { session, dispatch } = useSessionContext();
   const { send } = useWebSocket();
   const [file, setFile] = useState<File | null>(null);
+  const [fileBits, setFileBits] = useState<number[] | null>(null);
   const [intruderSettings, setIntruderSettings] = useState<IntruderSettings>({
     attackActive: true,
     interceptionIntensity: 0.5,
@@ -89,6 +91,8 @@ export function useSimulation() {
 
   const uploadFile = useCallback((f: File) => {
     setFile(f);
+    // Pre-compute bits so they're available for any role's BitStream
+    f.arrayBuffer().then((buf) => setFileBits(fileToBits(buf)));
     // TODO [WIRING]: Read file as ArrayBuffer, send via WebSocket as file_upload message
     // The backend (services/file_transfer.py) will chunk and relay it.
     send({ type: "file_upload", payload: { name: f.name, size: f.size } });
@@ -105,12 +109,14 @@ export function useSimulation() {
   const reset = useCallback(() => {
     dispatch({ type: "RESET" });
     setFile(null);
+    setFileBits(null);
   }, [dispatch]);
 
   return {
     mode: session.mode,
     phase: session.phase,
     file,
+    fileBits,
     intruderSettings,
     selectMode,
     startSimulation,

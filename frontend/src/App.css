@@ -862,3 +862,151 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── BitStream Visualization ───────────────────────────────── */
+
+.bitstream {
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  background: var(--gray-900);
+  overflow: hidden;
+}
+
+.bitstream__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--gray-850);
+}
+
+.bitstream__label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+}
+
+.bitstream__counter {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--accent-text);
+  letter-spacing: 0.5px;
+}
+
+/* Progress bar */
+.bitstream__progress-bar {
+  height: 2px;
+  background: var(--gray-800);
+}
+
+.bitstream__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple-500), var(--blue-400), var(--cyan-400));
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px var(--purple-glow);
+}
+
+/* Two-column layout: Sent | Received */
+.bitstream__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.bitstream__col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bitstream__col:first-child {
+  border-right: 1px solid var(--border-dim);
+}
+
+.bitstream__col-header {
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--gray-500);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--gray-850);
+}
+
+/* The bit grid */
+.bitstream__grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 10px;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Individual bit cells */
+.bitstream__bit {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+
+.bitstream__bit--0 {
+  background: var(--gray-800);
+  color: var(--gray-400);
+}
+
+.bitstream__bit--1 {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--purple-400);
+}
+
+.bitstream__bit--mismatch {
+  background: rgba(248, 113, 113, 0.2);
+  color: var(--danger);
+  box-shadow: 0 0 4px rgba(248, 113, 113, 0.3);
+  animation: mismatch-flash 1s ease-out;
+}
+
+.bitstream__bit--hidden {
+  background: var(--gray-850);
+  color: var(--gray-700);
+}
+
+.bitstream__bit--empty {
+  background: var(--gray-850);
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+}
+
+@keyframes mismatch-flash {
+  0% { background: rgba(248, 113, 113, 0.5); }
+  100% { background: rgba(248, 113, 113, 0.2); }
+}
+
+@media (max-width: 768px) {
+  .bitstream__columns {
+    grid-template-columns: 1fr;
+  }
+  .bitstream__col:first-child {
+    border-right: none;
+    border-bottom: 1px solid var(--border-dim);
+  }
+  .bitstream__grid {
+    max-height: 150px;
+  }
+}
