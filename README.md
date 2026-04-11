@@ -146,21 +146,15 @@ QuantumGuard demonstrates:
 
 ## Tech Stack
 
-### Backend (Rust)
-- `tokio` — asynchronous networking
-- `serde` — serialization
-- `sha2` — hashing
-- custom TCP protocol for communication
+### Backend (Python)
+- FastAPI — API and WebSocket server
+- NumPy — BB84 quantum simulation
+- Uvicorn — ASGI server
 
 ### Frontend (React + TypeScript)
 - React (Vite)
 - WebSockets for real-time updates
 - modular component-based UI
-
-### Quantum Layer (Python)
-- FastAPI or Flask
-- NumPy for BB84 simulation
-- optional Qiskit integration
 
 ---
 
@@ -168,7 +162,6 @@ QuantumGuard demonstrates:
 
 ### Prerequisites
 
-- Rust (latest stable)
 - Node.js (v18+)
 - Python 3.9+
 
@@ -188,7 +181,10 @@ cd quantumguard
 
 
 cd backend
-cargo build
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app:app --reload
 
 
 ---
@@ -199,18 +195,6 @@ cargo build
 cd frontend
 npm install
 npm run dev
-
-
----
-
-### 4. Setup Python QKD Service
-
-
-cd python
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app:app --reload
 
 
 ---

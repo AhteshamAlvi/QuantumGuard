@@ -1,6 +1,6 @@
-/target
 node_modules
 .env
+.venv
 venv
 dist
 .DS_Store
