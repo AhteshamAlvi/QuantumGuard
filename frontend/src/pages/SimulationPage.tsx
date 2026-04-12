@@ -31,7 +31,7 @@ export function SimulationPage() {
 
   const isLobby = phase === "lobby";
   const isRunning = phase === "key_exchange" || phase === "transferring";
-  const isDone = phase === "complete" || phase === "aborted";
+  const isDone = phase === "complete" || phase === "aborted" || phase === "failed";
   const isOrigin = session.role === "origin";
   const isIntruder = session.role === "intruder";
 

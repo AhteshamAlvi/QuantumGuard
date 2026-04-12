@@ -10,12 +10,12 @@ import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from models import Session, IntruderSettings, make_msg
-from crypto import sha256_hash
+from crypto import sha256_hash, aes_encrypt, aes_decrypt
 from services import session_manager, key_exchange
 
 router = APIRouter()
 
-
+# defines Websocket endpoint. This is where clients connect to the server.
 @router.websocket("/ws/{session_id}")
 async def session_ws(ws: WebSocket, session_id: str):
     await ws.accept()
@@ -114,101 +114,128 @@ async def _handle_message(session: Session, sender_role: str, msg: dict) -> None
             interceptionIntensity=payload.get("interceptionIntensity", 0.5),
         )
 
-    elif msg_type == "encrypted_file":
-        # Origin sends encrypted file data — route through intruder to target
-        await _route_encrypted_file(session, sender_role, msg)
-
-    elif msg_type == "relay_file":
-        # Intruder relays (possibly modified) encrypted data to target
-        await _route_relay(session, sender_role, msg)
-
-    elif msg_type == "transfer_result":
-        # Target reports decryption success/failure
-        await _handle_transfer_result(session, sender_role, msg)
+    # File transfer is server-driven after key exchange completes.
+    # See _run_file_transfer() — no client messages needed for transfer.
 
 
 async def _run_simulation(session: Session) -> None:
-    """Run key exchange, then wait for client-driven file transfer."""
+    """Run key exchange, then drive file transfer through the channel."""
     await key_exchange.run(session)
-    # After key exchange, the phase is either "transferring" or "aborted".
-    # If "transferring", clients now drive the file transfer:
-    #   1. Origin encrypts file with the key and sends "encrypted_file"
-    #   2. Server routes through intruder (if present) to target
-    #   3. Target decrypts and reports result
+
+    # If key exchange succeeded, run the file transfer
+    if session.phase == "transferring" and session.file_data and session.shared_key:
+        await _run_file_transfer(session)
 
 
-async def _route_encrypted_file(session: Session, sender_role: str, msg: dict) -> None:
-    """Route Origin's encrypted file through Intruder to Target."""
-    if sender_role != "origin":
-        return
+async def _run_file_transfer(session: Session) -> None:
+    """
+    Encrypt → route through Intruder → decrypt at Target.
+    Flow: Origin → Intruder → Target (mirrors key_exchange routing).
+    """
+    import base64
 
-    # Stream bit visualization to Origin + Target (not Intruder)
-    if session.file_data:
-        bits = _file_to_bits(session.file_data)
-        await session_manager.send_to(session, "origin", make_msg(
-            "bit_stream_init", bits=bits[:512], length=min(len(bits), 512)
-        ))
-        await session_manager.send_to(session, "target", make_msg(
-            "bit_stream_init", bits=bits[:512], length=min(len(bits), 512)
-        ))
+    file_data = session.file_data
+    key = session.shared_key
+    original_hash = sha256_hash(file_data)
 
-    # If intruder is connected, route through them first
-    if "intruder" in session.devices:
+    # Step 1: Encrypt the file (on behalf of Origin)
+    nonce, ciphertext = aes_encrypt(file_data, key)
+    nonce_b64 = base64.b64encode(nonce).decode()
+    cipher_b64 = base64.b64encode(ciphertext).decode()
+
+    # Send bit visualization to Origin + Target (never Intruder)
+    bits = _file_to_bits(file_data)
+    await session_manager.send_to(session, "origin", make_msg(
+        "bit_stream_init", bits=bits[:512], length=min(len(bits), 512)
+    ))
+    await session_manager.send_to(session, "target", make_msg(
+        "bit_stream_init", bits=bits[:512], length=min(len(bits), 512)
+    ))
+
+    # Tell Origin the file was encrypted and sent
+    await session_manager.send_to(session, "origin", make_msg(
+        "file_encrypted", hash=original_hash
+    ))
+
+    await asyncio.sleep(0.5)
+
+    # Step 2: Route through Intruder (if connected and active)
+    if "intruder" in session.devices and session.intruder_settings.attackActive:
+        # Intruder intercepts the ciphertext
+        # In classical mode they have the key, in quantum they don't
+        has_key = session.metrics.intruderCapturedKey
+
         await session_manager.send_to(session, "intruder", make_msg(
             "intercepted_file",
-            data=msg.get("data"),
-            nonce=msg.get("nonce"),
-            hash=session.file_hash,
-        ))
-    else:
-        # No intruder — send directly to target
-        await session_manager.send_to(session, "target", make_msg(
-            "file_incoming",
-            data=msg.get("data"),
-            nonce=msg.get("nonce"),
-            hash=session.file_hash,
+            nonce=nonce_b64,
+            data=cipher_b64,
+            hash=original_hash,
+            has_key=has_key,
         ))
 
+        if has_key:
+            # Classical: intruder can decrypt → they captured the file
+            session.metrics.intruderCapturedFile = True
+        else:
+            # Quantum: intruder sees ciphertext but can't decrypt
+            session.metrics.intruderCapturedFile = False
 
-async def _route_relay(session: Session, sender_role: str, msg: dict) -> None:
-    """Intruder relays data to Target (may have read/modified it)."""
-    if sender_role != "intruder":
-        return
-
-    # Update metrics if intruder claims they captured the file
-    if msg.get("captured"):
-        session.metrics.intruderCapturedFile = True
         await session_manager.broadcast(session, make_msg(
             "metrics_update", metrics=session.metrics.model_dump()
         ))
 
-    await session_manager.send_to(session, "target", make_msg(
-        "file_incoming",
-        data=msg.get("data"),
-        nonce=msg.get("nonce"),
-        hash=session.file_hash,
-    ))
+        await asyncio.sleep(1.0)
 
-
-async def _handle_transfer_result(session: Session, sender_role: str, msg: dict) -> None:
-    """Target reports whether decryption succeeded."""
-    if sender_role != "target":
-        return
-
-    success = msg.get("success", False)
-    hash_match = msg.get("hashMatch", False)
-
-    session.metrics.transferSuccess = success
-    session.metrics.fileHashMatch = hash_match
-
-    if success:
-        session.phase = "complete"
+        # Intruder forwards to Target (data passes through unchanged)
+        await session_manager.send_to(session, "target", make_msg(
+            "file_incoming",
+            nonce=nonce_b64,
+            data=cipher_b64,
+            hash=original_hash,
+            via="intruder",
+        ))
     else:
-        session.phase = "failed"
+        # No active intruder → direct delivery
+        await session_manager.send_to(session, "target", make_msg(
+            "file_incoming",
+            nonce=nonce_b64,
+            data=cipher_b64,
+            hash=original_hash,
+            via="direct",
+        ))
 
+    await asyncio.sleep(0.5)
+
+    # Step 3: Decrypt at Target
+    decrypted = aes_decrypt(nonce, ciphertext, key)
+
+    if decrypted is not None:
+        target_hash = sha256_hash(decrypted)
+        hash_match = (target_hash == original_hash)
+        session.metrics.transferSuccess = True
+        session.metrics.fileHashMatch = hash_match
+
+        await session_manager.send_to(session, "target", make_msg(
+            "file_decrypted",
+            success=True,
+            hash=target_hash,
+            hashMatch=hash_match,
+        ))
+    else:
+        session.metrics.transferSuccess = False
+        session.metrics.fileHashMatch = False
+
+        await session_manager.send_to(session, "target", make_msg(
+            "file_decrypted",
+            success=False,
+        ))
+
+    # Step 4: Final state
     await session_manager.broadcast(session, make_msg(
         "metrics_update", metrics=session.metrics.model_dump()
     ))
+
+    session.phase = "complete" if session.metrics.transferSuccess else "failed"
     await session_manager.broadcast(session, make_msg(
         "phase_update", phase=session.phase
     ))

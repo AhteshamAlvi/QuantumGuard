@@ -12,11 +12,13 @@ export function TransferStatus({ phase, metrics, mode, role }: Props) {
 
   const isComplete = phase === "complete";
   const isAborted = phase === "aborted";
+  const isFailed = phase === "failed";
 
   return (
     <div className={`transfer-status transfer-status--${phase}`}>
       <h3 className="transfer-status__heading">
         {isAborted && "Transfer Aborted"}
+        {isFailed && "Transfer Failed"}
         {isComplete && "Transfer Complete"}
         {phase === "key_exchange" && "Establishing Key..."}
         {phase === "transferring" && "Transferring File..."}
@@ -47,6 +49,12 @@ export function TransferStatus({ phase, metrics, mode, role }: Props) {
         <div className="transfer-status__message transfer-status__message--success">
           <p>Secure quantum key established. File transferred successfully.</p>
           <p>SHA-256 integrity: {metrics.fileHashMatch ? "Verified" : "Failed"}</p>
+        </div>
+      )}
+
+      {isFailed && (
+        <div className="transfer-status__message transfer-status__message--danger">
+          <p>Decryption failed. File could not be verified.</p>
         </div>
       )}
 

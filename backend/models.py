@@ -9,15 +9,13 @@ from fastapi import WebSocket
 from pydantic import BaseModel
 
 
-# ── Type Aliases ─────────────────────────────────────────────
-
+# Type Aliases
 Role = Literal["origin", "target", "intruder"]
 Mode = Literal["classical", "quantum"]
 SessionPhase = Literal["lobby", "key_exchange", "transferring", "complete", "aborted", "failed"]
 
 
-# ── Pydantic Models (serializable) ──────────────────────────
-
+# # keeps track of what's happening over the session
 class Metrics(BaseModel):
     qber: float | None = None
     keyExchangeAttempts: int = 0
@@ -29,13 +27,13 @@ class Metrics(BaseModel):
     transferSuccess: bool | None = None
 
 
+# keeps track of what's happening to the intruder
 class IntruderSettings(BaseModel):
     attackActive: bool = True
     interceptionIntensity: float = 0.5
 
 
-# ── Session (mutable, in-memory state) ──────────────────────
-
+# makes one session instance and its stored data
 @dataclass
 class Session:
     session_id: str
@@ -47,10 +45,9 @@ class Session:
     file_data: bytes | None = None
     file_hash: str | None = None
     metrics: Metrics = field(default_factory=Metrics)
+    bb84: dict | None = None
 
-
-# ── Message Helper ───────────────────────────────────────────
-
+# standard message builder
 def make_msg(msg_type: str, **payload) -> dict:
     """Build a message dict for ws.send_json()."""
     return {"type": msg_type, **payload}

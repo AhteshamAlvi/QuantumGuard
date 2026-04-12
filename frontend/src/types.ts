@@ -5,7 +5,8 @@ export type SessionPhase =
   | "key_exchange"
   | "transferring"
   | "complete"
-  | "aborted";
+  | "aborted"
+  | "failed";
 
 export interface DeviceInfo {
   role: Role;
@@ -36,23 +37,36 @@ export interface IntruderSettings {
   interceptionIntensity: number;
 }
 
-// Message types the frontend sends/receives over WebSocket.
-// Must stay in sync with backend/models/messages.py once implemented.
+// All WebSocket message types — must stay in sync with backend
 export type WsMessageType =
-  | "join_session"
+  // Client → Server
   | "role_selected"
   | "mode_selected"
   | "start_simulation"
   | "file_upload"
+  | "file_binary"
   | "intruder_settings"
+  // Server → Client (session)
+  | "session_state"
   | "phase_update"
   | "metrics_update"
   | "device_update"
-  | "transfer_chunk"
-  | "transfer_complete"
-  | "error";
+  | "mode_update"
+  | "error"
+  // Server → Client (key exchange)
+  | "key_generated"
+  | "key_established"
+  | "intercepted_key"
+  | "bb84_progress"
+  | "bb84_intercept"
+  // Server → Client (file transfer)
+  | "file_encrypted"
+  | "intercepted_file"
+  | "file_incoming"
+  | "file_decrypted"
+  | "bit_stream_init";
 
 export interface WsMessage {
   type: WsMessageType;
-  payload: Record<string, unknown>;
+  [key: string]: unknown;
 }
