@@ -284,14 +284,14 @@ This models a real **man-in-the-middle (MITM)** scenario.
 The backend generates a sequence of qubits:
 
 * Random bit string:
-  $$
+  $
   b_i \in {0,1}
-  $$
+  $
 
 * Random basis string:
-  $$
+  $
   \theta_i \in {Z, X}
-  $$
+  $
 
 Each pair $(b_i, \theta_i)$ defines a qubit.
 
@@ -302,14 +302,14 @@ These qubits are not transmitted as physical quantum states, but are **modeled p
 Each qubit is conceptually encoded as:
 
 * Z-basis:
-  $$
+  $
   0 \rightarrow |0\rangle, \quad 1 \rightarrow |1\rangle
-  $$
+  $
 
 * X-basis:
-  $$
+  $
   0 \rightarrow |+\rangle, \quad 1 \rightarrow |-\rangle
-  $$
+  $
 
 In the simulation:
 
@@ -338,9 +338,9 @@ If the intruder is active:
 
 * A subset of qubits is intercepted (based on intensity setting)
 * For each intercepted qubit, the intruder selects a random basis:
-  $$
+  $
   \theta_E \in {Z, X}
-  $$
+  $
 
 The intruder then:
 
@@ -351,9 +351,9 @@ The intruder then:
 #### Key Effect
 
 If:
-$$
+$
 \theta_E \ne \theta_i
-$$
+$
 
 Then:
 
@@ -366,26 +366,26 @@ This is the **source of detectable errors**.
 
 The Target independently selects a random basis:
 
-$$
+$
 \theta'_i \in {Z, X}
-$$
+$
 
 Measurement results:
 
 * If:
-  $$
+  $
   \theta'_i = \theta_i
-  $$
+  $
   → Correct result with probability 1
 
 * If:
-  $$
+  $
   \theta'_i \ne \theta_i
-  $$
+  $
   →
-  $$
+  $
   P(0) = P(1) = \frac{1}{2}
-  $$
+  $
 
 This behavior is simulated:
 
@@ -396,13 +396,13 @@ This behavior is simulated:
 
 After transmission, the backend performs **basis reconciliation**:
 
-* Origin’s basis $$ \theta_i $$
-* Target’s basis $$ \theta'_i $$
+* Origin’s basis $ \theta_i $
+* Target’s basis $ \theta'_i $
 
 Only indices where:
-$$
+$
 \theta_i = \theta'_i
-$$
+$
 
 are retained.
 
@@ -414,9 +414,9 @@ This produces the **sifted key**.
 
 The backend computes:
 
-$$
+$
 QBER = \frac{\text{mismatched bits}}{\text{total compared bits}}
-$$
+$
 
 This is displayed in real time in the frontend.
 
@@ -427,9 +427,9 @@ This is displayed in real time in the frontend.
 
 In QuantumGuard:
 
-$$
+$
 QBER \ge 11% \Rightarrow \text{Key Rejected}
-$$
+$
 
 ### Step 8 — Retry Mechanism
 
@@ -445,9 +445,9 @@ This models real-world QKD behavior where **secure keys must be statistically ve
 
 If:
 
-$$
+$
 QBER < 11%
-$$
+$
 
 Then:
 
