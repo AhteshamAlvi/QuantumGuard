@@ -267,7 +267,7 @@ QuantumGuard/
 - **WebSocket** (`/ws/{session_id}`) carries all real-time communication: role selection, mode updates, BB84 protocol messages, file transfer, metrics broadcasts.
 - **Server-driven**: the backend orchestrates every phase. Clients are reactive — they receive messages and update their UI accordingly.
 
-### BB84 implementation
+## BB84 implementation
 
 The intruder's measurements use **Qiskit Aer** (a real quantum circuit simulator) to model qubit collapse accurately. The Target's measurements use a simplified client-side simulation (`lib/quantum.ts`). The QBER computation happens server-side by comparing Origin's and Target's bits on matching bases.
 
@@ -278,8 +278,6 @@ Origin → Intruder → Target
 ```
 
 This models a real **man-in-the-middle (MITM)** scenario.
-
----
 
 ### Step 1 — Qubit Generation (Server-Side)
 
@@ -298,8 +296,6 @@ The backend generates a sequence of qubits:
 Each pair $(b_i, \theta_i)$ defines a qubit.
 
 These qubits are not transmitted as physical quantum states, but are **modeled probabilistically** using quantum rules.
-
----
 
 ### Step 2 — Encoding (Origin Perspective)
 
@@ -320,8 +316,6 @@ In the simulation:
 * This encoding is represented as **state vectors**
 * The frontend visualizes these states using the **Bloch sphere**
 
----
-
 ### Step 3 — Transmission Through Network Channel
 
 The qubits are streamed from:
@@ -337,8 +331,6 @@ This is implemented as:
 * Animated circuit showing qubit progression
 
 At this stage, no measurement has occurred — the qubits remain in superposition.
-
----
 
 ### Step 4 — Intruder Interaction (Eavesdropping Simulation)
 
@@ -356,8 +348,6 @@ The intruder then:
 2. Collapses its state
 3. Re-encodes and forwards it to the Target
 
----
-
 #### Key Effect
 
 If:
@@ -371,8 +361,6 @@ Then:
 * The forwarded qubit no longer matches the original
 
 This is the **source of detectable errors**.
-
----
 
 ### Step 5 — Measurement at Target
 
@@ -404,8 +392,6 @@ This behavior is simulated:
 * Partially using Qiskit (backend)
 * Partially using probabilistic logic (frontend)
 
----
-
 ### Step 6 — Basis Matching (Sifting Phase)
 
 After transmission, the backend performs **basis reconciliation**:
@@ -424,8 +410,6 @@ All other bits are discarded.
 
 This produces the **sifted key**.
 
----
-
 ### Step 7 — Error Detection (QBER Calculation)
 
 The backend computes:
@@ -435,8 +419,6 @@ QBER = \frac{\text{mismatched bits}}{\text{total compared bits}}
 $$
 
 This is displayed in real time in the frontend.
-
----
 
 #### Interpretation
 
@@ -449,8 +431,6 @@ $$
 QBER \ge 11% \Rightarrow \text{Key Rejected}
 $$
 
----
-
 ### Step 8 — Retry Mechanism
 
 If intrusion is detected:
@@ -460,8 +440,6 @@ If intrusion is detected:
 * Up to a maximum number of attempts
 
 This models real-world QKD behavior where **secure keys must be statistically verified**.
-
----
 
 ### Step 9 — Key Finalization
 
