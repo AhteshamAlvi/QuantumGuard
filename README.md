@@ -135,7 +135,7 @@ pip install qiskit qiskit-aer    # Quantum simulation engine
 uvicorn app:app --reload
 ```
 
-The API runs at `https://quantum-guard-eight.vercel.app/`. Health check: `GET /api/health`.
+The API runs at `[https://quantum-guard-eight.vercel.app/](https://quantumguard-backend-tveg.onrender.com)`. Health check: `GET /api/health`.
 
 ### 3. Start the frontend
 
