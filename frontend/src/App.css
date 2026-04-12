@@ -1299,140 +1299,15 @@
   overflow: hidden;
 }
 
-/* ── Wires (3 channels: Origin, Intruder, Target) ───────────── */
+/* Circuit is now canvas-based — all rendering done in CircuitView.tsx */
 
-.wire {
-  stroke: rgba(34, 211, 238, 0.25);
-  stroke-width: 2;
-  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.25));
+/* Active glow on the container border */
+.circuit--active {
+  border-color: rgba(34, 211, 238, 0.3);
+  box-shadow:
+    inset 0 0 40px rgba(139, 92, 246, 0.06),
+    0 0 40px rgba(34, 211, 238, 0.12);
 }
-
-.wire--intruder {
-  stroke: rgba(248, 113, 113, 0.25);
-  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.3));
-  stroke-dasharray: 6 4;
-}
-
-/* ── Gate Boxes ─────────────────────────── */
-
-.gate {
-  fill: rgba(34, 211, 238, 0.05);
-  stroke: rgba(34, 211, 238, 0.8);
-  stroke-width: 1.5;
-  rx: 6;
-  transition: all 0.2s ease;
-  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.2));
-}
-
-.gate:hover {
-  stroke: var(--accent-cyan);
-  box-shadow: 0 0 10px var(--accent-cyan);
-}
-
-/* Intruder gates (red tone) */
-.gate--intruder {
-  stroke: var(--danger);
-  fill: rgba(248, 113, 113, 0.08);
-  filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.35));
-}
-
-/* Measurement gate (Target side) */
-.measure {
-  stroke: var(--purple-400);
-  fill: rgba(139, 92, 246, 0.08);
-  filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.35));
-}
-
-/* ── Gate Text ─────────────────────────── */
-
-.circuit text {
-  font-family: var(--mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  fill: var(--accent-cyan);
-  pointer-events: none;
-}
-
-.circuit .gate-text {
-  fill: var(--accent-cyan);
-  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.4));
-}
-
-.circuit text.intruder-text {
-  fill: var(--danger);
-}
-
-/* ── Labels (Origin / Intruder / Target) ─ */
-
-.circuit-label {
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  fill: rgba(255, 255, 255, 0.5);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.circuit-label--intruder {
-  fill: var(--danger);
-}
-
-/* ── Particles (Packets / Qubits) ─────── */
-
-.qubit {
-  fill: var(--accent-cyan);
-  filter:
-    drop-shadow(0 0 8px var(--accent-cyan))
-    drop-shadow(0 0 16px rgba(34, 211, 238, 0.6));
-  transition: cx 0.1s linear, cy 0.1s linear;
-}
-
-/* alternating color (multi packets) */
-.qubit:nth-child(odd) {
-  fill: var(--purple-400);
-  filter:
-    drop-shadow(0 0 6px var(--purple-400))
-    drop-shadow(0 0 12px rgba(139, 92, 246, 0.5));
-}
-
-/* intercepted / failed packets */
-.qubit--dead {
-  fill: var(--danger);
-  opacity: 0.35;
-  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.4));
-}
-
-/* packets while passing through intruder */
-.qubit--intercepted {
-  fill: var(--danger);
-  filter:
-    drop-shadow(0 0 8px var(--danger))
-    drop-shadow(0 0 16px rgba(248, 113, 113, 0.6));
-}
-
-/* ── Intruder vertical tap line ───────── */
-
-.circuit__intercept-line {
-  stroke: rgba(248, 113, 113, 0.4);
-  stroke-width: 2;
-  stroke-dasharray: 4 4;
-}
-
-/* ── Glow Animation ───────────────────── */
-
-@keyframes circuit-pulse {
-  0%, 100% {
-    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.2));
-  }
-  50% {
-    filter: drop-shadow(0 0 14px rgba(34, 211, 238, 0.5));
-  }
-}
-
-.circuit--active .wire {
-  animation: circuit-pulse 2.5s ease-in-out infinite;
-}
-
-/* Scanline overlay removed — canvas-based circuit handles its own rendering */
 
 .simulation-page__bloch {
   width: 300px;
@@ -1457,24 +1332,7 @@
   height: 100%;
 }
 
-.bloch-sphere__circle {
-  fill: rgba(139, 92, 246, 0.03);
-  stroke: rgba(139, 92, 246, 0.5);
-  stroke-width: 1.5;
-  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.15));
-}
-
-.bloch-sphere__equator {
-  fill: none;
-  stroke: rgba(139, 92, 246, 0.3);
-  stroke-width: 1;
-  stroke-dasharray: 4 3;
-}
-
-.bloch-sphere__axis {
-  stroke: rgba(255, 255, 255, 0.15);
-  stroke-width: 1;
-}
+/* Wireframe sphere is drawn procedurally in BlochSphereView.tsx */
 
 .bloch-sphere__label {
   font-family: var(--mono);
