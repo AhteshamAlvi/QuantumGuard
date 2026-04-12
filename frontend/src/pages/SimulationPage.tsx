@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSessionContext } from "../context/SessionContext";
 import { useSimulation } from "../hooks/useSimulation";
@@ -11,6 +11,8 @@ import { MetricsPanel } from "../components/MetricsPanel";
 import { IntruderControls } from "../components/IntruderControls";
 import { TransferStatus } from "../components/TransferStatus";
 import { BitStream } from "../components/BitStream";
+import { Panel } from "../components/Panel";
+import { FilePreview } from "../components/FilePreview";
 
 export function SimulationPage() {
   const navigate = useNavigate();
@@ -24,7 +26,13 @@ export function SimulationPage() {
   const stream = useTransferStream(session.role);
   const streamStartedRef = useRef(false);
 
+  // Panel visibility
+  const [bitStreamOpen, setBitStreamOpen] = useState(false);
+  const [filePreviewOpen, setFilePreviewOpen] = useState(false);
+
   const isIntruder = session.role === "intruder";
+  const isOrigin = session.role === "origin";
+  const isTarget = session.role === "target";
 
   // Reactively start the bit stream when phase transitions to "transferring".
   useEffect(() => {
@@ -56,7 +64,6 @@ export function SimulationPage() {
   const isLobby = phase === "lobby";
   const isRunning = phase === "key_exchange" || phase === "transferring";
   const isDone = phase === "complete" || phase === "aborted" || phase === "failed";
-  const isOrigin = session.role === "origin";
 
   // Check if all 3 roles are connected
   const allConnected = session.devices.length === 3
@@ -66,9 +73,23 @@ export function SimulationPage() {
     reset();
     stream.resetStream();
     streamStartedRef.current = false;
+    setBitStreamOpen(false);
+    setFilePreviewOpen(false);
   };
 
-  const showBitStream = !isIntruder && (isRunning || isDone) && stream.totalBits > 0;
+  // ── Button visibility rules ──
+
+  // Bit stream: available for Origin + Target once transferring/done, and there are bits
+  const canShowBitStream = !isIntruder && (isRunning || isDone) && stream.totalBits > 0;
+
+  // File preview:
+  //   Origin → available once file is uploaded
+  //   Target → available after transfer completes (needs received data)
+  //   Intruder → available only if intruder captured the file (needs received data)
+  const canShowFilePreview =
+    (isOrigin && !!file) ||
+    (isTarget && phase === "complete" && !!session.receivedFile) ||
+    (isIntruder && metrics.intruderCapturedFile && !!session.receivedFile);
 
   // Origin can only start when all 3 devices are connected + mode + file selected
   const canStart = allConnected && !!mode && !!file;
@@ -135,13 +156,26 @@ export function SimulationPage() {
 
           <TransferStatus phase={phase} metrics={metrics} mode={mode} role={session.role} />
 
-          {showBitStream && (
-            <BitStream
-              senderBits={stream.senderBits}
-              receiverBits={stream.receiverBits}
-              showSender={stream.showSender}
-              totalBits={stream.totalBits}
-            />
+          {/* Toolbar buttons */}
+          {(canShowBitStream || canShowFilePreview) && (
+            <div className="simulation-page__toolbar">
+              {canShowBitStream && (
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => setBitStreamOpen(true)}
+                >
+                  View Bit Stream
+                </button>
+              )}
+              {canShowFilePreview && (
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => setFilePreviewOpen(true)}
+                >
+                  {isIntruder ? "View Captured File" : "View File Preview"}
+                </button>
+              )}
+            </div>
           )}
 
           {(isRunning || isDone) && (
@@ -160,6 +194,34 @@ export function SimulationPage() {
           )}
         </main>
       </div>
+
+      {/* ── Panels (overlays) ── */}
+      <Panel title="Bit Stream Visualization" open={bitStreamOpen} onClose={() => setBitStreamOpen(false)}>
+        <BitStream
+          senderBits={stream.senderBits}
+          receiverBits={stream.receiverBits}
+          showSender={stream.showSender}
+          totalBits={stream.totalBits}
+        />
+      </Panel>
+
+      <Panel
+        title={isIntruder ? "Captured File" : "File Preview"}
+        open={filePreviewOpen}
+        onClose={() => setFilePreviewOpen(false)}
+      >
+        <FilePreview
+          file={isOrigin ? file : undefined}
+          receivedFile={!isOrigin ? session.receivedFile : undefined}
+          label={
+            isOrigin
+              ? "Outgoing file"
+              : isTarget
+                ? "Received file"
+                : "Intercepted file"
+          }
+        />
+      </Panel>
     </div>
   );
 }

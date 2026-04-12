@@ -129,17 +129,33 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           console.debug("[WS] BB84 result", msg);
           break;
 
-        // File transfer messages — logged for debugging
+        // File transfer messages
         case "file_encrypted":
-        case "intercepted_file":
         case "file_incoming":
         case "bit_stream_init":
           console.debug(`[WS] ${msg.type}`, msg);
           break;
 
-        // File decrypted at target
+        // Intruder intercepts file — store if they captured it
+        case "intercepted_file":
+          console.debug(`[WS] ${msg.type}`, msg);
+          if (msg.has_key && msg.file_data && msg.file_name) {
+            dispatch({
+              type: "SET_RECEIVED_FILE",
+              file: { name: msg.file_name as string, data: msg.file_data as string },
+            });
+          }
+          break;
+
+        // File decrypted at target — store for preview
         case "file_decrypted":
           console.debug("[WS] File decrypted", msg);
+          if (msg.success && msg.file_data && msg.file_name) {
+            dispatch({
+              type: "SET_RECEIVED_FILE",
+              file: { name: msg.file_name as string, data: msg.file_data as string },
+            });
+          }
           break;
 
         case "error":

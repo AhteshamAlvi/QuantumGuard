@@ -31,7 +31,6 @@ def get_session(session_id: str) -> Session | None:
     return _sessions.get(session_id)
 
 # adds a device to a session by its role
-# allows re-registration (handles reconnects + React strict mode)
 def add_device(session_id: str, role: str, ws: WebSocket) -> bool:
     session = _sessions.get(session_id)
     if not session:
@@ -41,8 +40,6 @@ def add_device(session_id: str, role: str, ws: WebSocket) -> bool:
 
 
 # removes a device if it disconnects
-# does NOT auto-delete empty sessions (React strict mode causes
-# rapid connect/disconnect cycles that would kill the session)
 def remove_device(session_id: str, role: str) -> None:
     session = _sessions.get(session_id)
     if not session:

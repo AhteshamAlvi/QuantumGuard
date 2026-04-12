@@ -104,6 +104,7 @@ async def _handle_message(session: Session, sender_role: str, msg: dict) -> None
         import base64
         file_b64 = msg.get("data", "")
         session.file_data = base64.b64decode(file_b64)
+        session.file_name = msg.get("name", "file")
         session.file_hash = sha256_hash(session.file_data)
 
     elif msg_type == "intruder_settings":
@@ -148,8 +149,10 @@ async def _run_file_transfer(session: Session) -> None:
     import base64
 
     file_data = session.file_data
+    file_name = session.file_name or "file"
     key = session.shared_key
     original_hash = sha256_hash(file_data)
+    file_b64 = base64.b64encode(file_data).decode()  # raw file for preview
 
     # Step 1: Encrypt the file (on behalf of Origin)
     nonce, ciphertext = aes_encrypt(file_data, key)
@@ -178,12 +181,19 @@ async def _run_file_transfer(session: Session) -> None:
         # In classical mode they have the key, in quantum they don't
         has_key = session.metrics.intruderCapturedKey
 
+        intruder_msg = {
+            "nonce": nonce_b64,
+            "data": cipher_b64,
+            "hash": original_hash,
+            "has_key": has_key,
+        }
+        # If intruder has the key, include the raw file for preview
+        if has_key:
+            intruder_msg["file_data"] = file_b64
+            intruder_msg["file_name"] = file_name
+
         await session_manager.send_to(session, "intruder", make_msg(
-            "intercepted_file",
-            nonce=nonce_b64,
-            data=cipher_b64,
-            hash=original_hash,
-            has_key=has_key,
+            "intercepted_file", **intruder_msg
         ))
 
         if has_key:
@@ -233,6 +243,8 @@ async def _run_file_transfer(session: Session) -> None:
             success=True,
             hash=target_hash,
             hashMatch=hash_match,
+            file_data=file_b64,
+            file_name=file_name,
         ))
     else:
         session.metrics.transferSuccess = False

@@ -36,14 +36,15 @@ class Session:
     intruder_settings: IntruderSettings = field(default_factory=IntruderSettings)
     shared_key: bytes | None = None
     file_data: bytes | None = None
+    file_name: str | None = None
     file_hash: str | None = None
     metrics: Metrics = field(default_factory=Metrics)
-    # BB84 state — server stores Origin's bits/bases, waits for Target's
+    # BB84 state, where server stores Origin's bits/bases and waits for Target's
     bb84_origin_bits: list[int] = field(default_factory=list)
     bb84_origin_bases: list[str] = field(default_factory=list)
     bb84_target_bits: list[int] = field(default_factory=list)
     bb84_target_bases: list[str] = field(default_factory=list)
-    bb84_ready: bool = False  # set True when Target sends measurement
+    bb84_ready: bool = False
 
 # standard message builder
 def make_msg(msg_type: str, **payload) -> dict:

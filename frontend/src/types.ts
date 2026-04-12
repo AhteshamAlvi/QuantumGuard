@@ -13,12 +13,19 @@ export interface DeviceInfo {
   connected: boolean;
 }
 
+/** File info received via WebSocket (Target after decryption, Intruder if captured) */
+export interface ReceivedFile {
+  name: string;
+  data: string;  // base64-encoded raw bytes
+}
+
 export interface SessionState {
   sessionId: string | null;
   role: Role | null;
   mode: Mode | null;
   phase: SessionPhase;
   devices: DeviceInfo[];
+  receivedFile: ReceivedFile | null;
 }
 
 export interface Metrics {

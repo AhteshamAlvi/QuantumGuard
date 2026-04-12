@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, type ReactNode } from "react";
-import type { SessionState, Role, Mode, SessionPhase, DeviceInfo, Metrics } from "../types";
+import type { SessionState, Role, Mode, SessionPhase, DeviceInfo, Metrics, ReceivedFile } from "../types";
 
 const initialSession: SessionState = {
   sessionId: null,
@@ -7,6 +7,7 @@ const initialSession: SessionState = {
   mode: null,
   phase: "lobby",
   devices: [],
+  receivedFile: null,
 };
 
 const initialMetrics: Metrics = {
@@ -27,6 +28,7 @@ type Action =
   | { type: "SET_PHASE"; phase: SessionPhase }
   | { type: "SET_DEVICES"; devices: DeviceInfo[] }
   | { type: "UPDATE_METRICS"; metrics: Partial<Metrics> }
+  | { type: "SET_RECEIVED_FILE"; file: ReceivedFile }
   | { type: "RESET" };
 
 interface State {
@@ -48,6 +50,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, session: { ...state.session, devices: action.devices } };
     case "UPDATE_METRICS":
       return { ...state, metrics: { ...state.metrics, ...action.metrics } };
+    case "SET_RECEIVED_FILE":
+      return { ...state, session: { ...state.session, receivedFile: action.file } };
     case "RESET":
       return { session: initialSession, metrics: initialMetrics };
   }

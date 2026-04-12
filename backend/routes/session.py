@@ -13,7 +13,7 @@ async def create_session():
     session = session_manager.create_session()
     return {"session_id": session.session_id}
 
-# Join session endpoint — returns which roles are already taken
+# Join session endpoint and returns which roles are already taken
 @router.post("/sessions/{session_id}/join")
 async def join_session(session_id: str):
     session = session_manager.get_session(session_id)
