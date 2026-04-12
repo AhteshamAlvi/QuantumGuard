@@ -47,23 +47,22 @@ export function useTransferStream(role: Role | null) {
       setDone(false);
       setStreaming(true);
 
-      const received = simulateReceiverBits(bits, errorRate);
       const len = bits.length;
 
+      // Always set structure
       setTotalBits(len);
       setReceiverBits(new Array(len).fill(null));
 
       if (isOrigin) {
-        // Origin sees sender bits immediately
         setSenderBits(bits);
-        setShowSender(true);
+        setShowSender(false);
       } else {
-        // Target: sender column is hidden until stream completes
-        setSenderBits(bits);
+        setSenderBits([]);
         setShowSender(false);
       }
 
-      // Stream receiver bits in one-by-one
+      const received = simulateReceiverBits(bits, errorRate);
+
       received.forEach((bit, i) => {
         const id = window.setTimeout(() => {
           setReceiverBits((prev) => {
@@ -72,19 +71,34 @@ export function useTransferStream(role: Role | null) {
             return next;
           });
 
-          // Last bit → mark done, reveal sender for Target
+          // Last bit reached
           if (i === len - 1) {
             setStreaming(false);
             setDone(true);
-            if (isTarget) setShowSender(true);
+
+            // Delay reveal for polish
+            const revealId = window.setTimeout(() => {
+              if (isOrigin) {
+                setShowSender(true);
+              }
+
+              if (isTarget) {
+                setSenderBits(bits);
+                setShowSender(true);
+              }
+            }, 300);
+
+            timerRef.current.push(revealId);
           }
         }, i * 15);
+
+        // ✅ Correct placement
         timerRef.current.push(id);
       });
     },
-    [isOrigin, isTarget],
+    [isOrigin, isTarget]
   );
-
+  
   const resetStream = useCallback(() => {
     timerRef.current.forEach(clearTimeout);
     timerRef.current = [];

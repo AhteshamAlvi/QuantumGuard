@@ -1168,6 +1168,20 @@
   max-height: 50vh;
 }
 
+.bitstream__empty {
+  display: flex;
+  flex-direction: column;
+}
+
+.bitstream__empty-message {
+  padding: 24px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
 /* ── File Preview ─────────────────────────────────────────── */
 
 .file-preview {

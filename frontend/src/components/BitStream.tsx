@@ -23,6 +23,10 @@ export function BitStream({ senderBits, receiverBits, showSender, totalBits }: P
   const filledCount = receiverBits.filter((b) => b !== null).length;
   const progress = totalBits > 0 ? filledCount / totalBits : 0;
 
+  if (totalBits === 0) {
+    return <div className="bitstream__empty">Waiting for transmission...</div>;
+  }
+  
   return (
     <div className="bitstream">
       <div className="bitstream__header">

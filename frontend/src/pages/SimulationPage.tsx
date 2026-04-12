@@ -40,11 +40,9 @@ export function SimulationPage() {
       streamStartedRef.current = false;
       return;
     }
+
     if (streamStartedRef.current) return;
     if (isIntruder) return;
-    if (!fileBits || fileBits.length === 0) return;
-
-    streamStartedRef.current = true;
 
     const errorRate =
       mode === "classical"
@@ -53,7 +51,21 @@ export function SimulationPage() {
           ? intruderSettings.interceptionIntensity * 0.3
           : 0.02;
 
-    stream.startStream(fileBits, errorRate);
+    if (isOrigin) {
+      if (!fileBits || fileBits.length === 0) return;
+
+      stream.startStream(fileBits, errorRate);
+    } else if (isTarget) {
+      // Target does NOT have fileBits — must still start stream
+      const expectedLength = 512; // or match your MAX_BITS
+
+      stream.startStream(
+        Array.from({ length: expectedLength }, () => Math.round(Math.random())),
+        errorRate
+      );
+    }
+
+    streamStartedRef.current = true;
   }, [phase, fileBits, mode, isIntruder, intruderSettings, stream]);
 
   if (!session.sessionId) {
@@ -80,7 +92,7 @@ export function SimulationPage() {
   // ── Button visibility rules ──
 
   // Bit stream: available for Origin + Target once transferring/done, and there are bits
-  const canShowBitStream = !isIntruder && (isRunning || isDone) && stream.totalBits > 0;
+  const canShowBitStream = !isIntruder && (isRunning || isDone);
 
   // File preview:
   //   Origin → available once file is uploaded
