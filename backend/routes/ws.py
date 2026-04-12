@@ -3,13 +3,16 @@
 # ══════════════════════════════════════════════════════════════
 #
 # Pure router: receives messages from clients, routes them to
-# the right recipients. Clients own encryption, decryption, and
-# execution. Server only coordinates state and relays messages.
+# the right recipients. Server handles encryption/decryption and
+# coordinates state. Clients handle BB84 measurement (Target).
 
 import asyncio
+import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from models import Session, IntruderSettings, make_msg
+
+logger = logging.getLogger("quantumguard")
 from crypto import sha256_hash, aes_encrypt, aes_decrypt
 from services import session_manager, key_exchange
 
@@ -36,10 +39,13 @@ async def session_ws(ws: WebSocket, session_id: str):
             return
 
         role = first_msg.get("role") or first_msg.get("payload", {}).get("role")
+        logger.info(f"[WS] Role '{role}' connecting to session '{session_id}'")
         if not session_manager.add_device(session_id, role, ws):
+            logger.warning(f"[WS] Failed to add role '{role}' to session '{session_id}'")
             await ws.send_json(make_msg("error", message=f"Role '{role}' is already taken"))
             await ws.close(code=4002)
             return
+        logger.info(f"[WS] Role '{role}' registered. Devices: {list(session.devices.keys())}")
 
         # Broadcast updated device list
         await session_manager.broadcast(session, make_msg(
@@ -61,9 +67,9 @@ async def session_ws(ws: WebSocket, session_id: str):
             await _handle_message(session, role, msg)
 
     except WebSocketDisconnect:
-        pass
-    except Exception:
-        pass
+        logger.info(f"[WS] Role '{role}' disconnected from '{session_id}'")
+    except Exception as e:
+        logger.error(f"[WS] Error for role '{role}' in '{session_id}': {e}", exc_info=True)
     finally:
         if role:
             session_manager.remove_device(session_id, role)
@@ -78,6 +84,7 @@ async def session_ws(ws: WebSocket, session_id: str):
 async def _handle_message(session: Session, sender_role: str, msg: dict) -> None:
     """Dispatch a client message to the appropriate handler."""
     msg_type = msg.get("type", "")
+    logger.info(f"[WS] {sender_role} sent: {msg_type}")
 
     if msg_type == "mode_selected":
         mode = msg.get("mode") or msg.get("payload", {}).get("mode")
@@ -89,12 +96,6 @@ async def _handle_message(session: Session, sender_role: str, msg: dict) -> None
         await session_manager.broadcast(session, make_msg("phase_update", phase="key_exchange"))
         # Key exchange runs async — server coordinates BB84 or classical
         asyncio.create_task(_run_simulation(session))
-
-    elif msg_type == "file_upload":
-        # Origin sends file metadata, then binary data follows
-        if sender_role != "origin":
-            return
-        session.file_hash = msg.get("hash")
 
     elif msg_type == "file_binary":
         # Origin sends raw file bytes (base64 encoded in JSON)

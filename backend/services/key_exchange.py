@@ -16,7 +16,6 @@ from qkd.bb84 import generate_bits, generate_bases, encode_qubits, should_interc
 from services import session_manager
 from services.qiskit_engine import measure_qubit
 
-MAX_ATTEMPTS = 3
 QBER_THRESHOLD = 0.11       # defines the error bound (11%)
 NUM_QUBITS = 256
 
@@ -61,7 +60,7 @@ async def _run_classical(session: Session) -> None:
     await asyncio.sleep(0.5)
 
     # Step 2: Simulate transmission over channel (Origin → Target)
-    if session.intruder_settings.attackActive:
+    if "intruder" in session.devices and session.intruder_settings.attackActive:
         # Intruder intercepts the key
         session.metrics.intruderCapturedKey = True
 

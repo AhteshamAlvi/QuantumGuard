@@ -4,18 +4,11 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal
 from fastapi import WebSocket
 from pydantic import BaseModel
 
 
-# Type Aliases
-Role = Literal["origin", "target", "intruder"]
-Mode = Literal["classical", "quantum"]
-SessionPhase = Literal["lobby", "key_exchange", "transferring", "complete", "aborted", "failed"]
-
-
-# # keeps track of what's happening over the session
+# keeps track of what's happening over the session
 class Metrics(BaseModel):
     qber: float | None = None
     keyExchangeAttempts: int = 0

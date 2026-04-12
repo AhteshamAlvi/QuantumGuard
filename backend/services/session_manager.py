@@ -31,22 +31,23 @@ def get_session(session_id: str) -> Session | None:
     return _sessions.get(session_id)
 
 # adds a device to a session by its role
+# allows re-registration (handles reconnects + React strict mode)
 def add_device(session_id: str, role: str, ws: WebSocket) -> bool:
     session = _sessions.get(session_id)
-    if not session or role in session.devices:
+    if not session:
         return False
     session.devices[role] = ws
     return True
 
 
-# removes a device if disconnects and deletes it if its empty
+# removes a device if it disconnects
+# does NOT auto-delete empty sessions (React strict mode causes
+# rapid connect/disconnect cycles that would kill the session)
 def remove_device(session_id: str, role: str) -> None:
     session = _sessions.get(session_id)
     if not session:
         return
     session.devices.pop(role, None)
-    if not session.devices:
-        _sessions.pop(session_id, None)
 
 # gets all the devices in the session
 def get_device_list(session_id: str) -> list[dict]:
@@ -74,12 +75,3 @@ async def send_to(session: Session, role: str, message: dict) -> None:
             await ws.send_json(message)
         except Exception:
             pass
-
-# sends to everyone except the specified device
-async def send_to_except(session: Session, exclude_role: str, message: dict) -> None:
-    for role, ws in list(session.devices.items()):
-        if role != exclude_role:
-            try:
-                await ws.send_json(message)
-            except Exception:
-                pass

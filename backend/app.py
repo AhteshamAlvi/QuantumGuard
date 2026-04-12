@@ -2,8 +2,12 @@
 # app.py — FastAPI entry point
 # ══════════════════════════════════════════════════════════════
 
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("quantumguard").setLevel(logging.DEBUG)
 
 from routes.session import router as session_router
 from routes.ws import router as ws_router
