@@ -248,18 +248,18 @@ QuantumGuard/
 
 ```
   ┌────────────┐         ┌─────────────────────┐         ┌────────────┐
-  │   Origin   │◄───────►│   FastAPI Backend    │◄───────►│   Target   │
+  │   Origin   │◄───────►│   FastAPI Backend   │◄───────►│   Target   │
   │  (browser) │   WS    │                     │   WS    │  (browser) │
-  └────────────┘         │  - Session manager   │         └────────────┘
-                         │  - Key exchange       │
-                         │  - BB84 + Qiskit      │
-                         │  - AES-GCM encrypt    │
-                         │  - File routing        │
-                         └──────────┬────────────┘
+  └────────────┘         │  - Session manager  │         └────────────┘
+                         │  - Key exchange     │
+                         │  - BB84 + Qiskit    │
+                         │  - AES-GCM encrypt  │
+                         │  - File routing     │
+                         └──────────┬──────────┘
                                     │ WS
                               ┌─────┴──────┐
-                              │  Intruder   │
-                              │  (browser)  │
+                              │  Intruder  │
+                              │  (browser) │
                               └────────────┘
 ```
 
