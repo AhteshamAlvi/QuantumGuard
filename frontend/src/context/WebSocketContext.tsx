@@ -129,6 +129,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           console.debug("[WS] BB84 result", msg);
           break;
 
+        // BB84 retry — intrusion detected, key exchange restarting
+        case "bb84_retry":
+          console.debug("[WS] BB84 retry", msg);
+          break;
+
         // File transfer messages
         case "file_encrypted":
         case "file_incoming":

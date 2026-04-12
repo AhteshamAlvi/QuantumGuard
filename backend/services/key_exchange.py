@@ -18,6 +18,7 @@ from services.qiskit_engine import measure_qubit
 
 QBER_THRESHOLD = 0.11       # defines the error bound (11%)
 NUM_QUBITS = 256
+MAX_ATTEMPTS = 100
 
 # converts bits into chunks of 8 (bytes)
 def bits_to_bytes(bits: list[int]) -> bytes:
@@ -102,149 +103,163 @@ async def _run_classical(session: Session) -> None:
 
 # runs the quantum protocol
 async def _run_quantum(session: Session) -> None:
-    # ── Phase 1: Origin prepares qubits ──
-    origin_bits = generate_bits(NUM_QUBITS)
-    origin_bases = generate_bases(NUM_QUBITS)
+    while session.metrics.keyExchangeAttempts < MAX_ATTEMPTS:
+        # Reset BB84 state for this attempt
+        session.bb84_ready = False
+        session.bb84_target_bits = []
+        session.bb84_target_bases = []
 
-    session.metrics.keyExchangeAttempts += 1
-    session.bb84_origin_bits = origin_bits
-    session.bb84_origin_bases = origin_bases
-    session.bb84_ready = False
+        # ── Phase 1: Origin prepares qubits ──
+        origin_bits = generate_bits(NUM_QUBITS)
+        origin_bases = generate_bases(NUM_QUBITS)
 
-    # Tell Origin what they prepared
-    await session_manager.send_to(session, "origin", make_msg(
-        "bb84_prepare",
-        bits=origin_bits,
-        bases=origin_bases,
-        count=NUM_QUBITS,
-    ))
+        session.metrics.keyExchangeAttempts += 1
+        session.bb84_origin_bits = origin_bits
+        session.bb84_origin_bases = origin_bases
 
-    await asyncio.sleep(0.5)
-
-    # Intruder doesn't manually do stuff. Server applies interception using Qiskit, then tells intruder what happened.
-    qubits = encode_qubits(origin_bits, origin_bases)
-    intruder_active = (
-        "intruder" in session.devices
-        and session.intruder_settings.attackActive
-    )
-    intercepted_count = 0
-
-    if intruder_active:
-        intensity = session.intruder_settings.interceptionIntensity
-        for i, q in enumerate(qubits):
-            if should_intercept(True, intensity):
-                intercepted_count += 1
-                eve_basis = intercept_choose_basis()
-                # Qiskit measures the qubit — collapses it
-                measured_bit = measure_qubit(q["bit"], q["basis"], eve_basis)
-                # Eve re-sends in her own basis (disturbs state)
-                qubits[i] = {"bit": measured_bit, "basis": eve_basis}
-
-        # Tell intruder what they intercepted (summary, not the key)
-        await session_manager.send_to(session, "intruder", make_msg(
-            "bb84_intercept_result",
-            intercepted=intercepted_count,
-            total=NUM_QUBITS,
-            intensity=intensity,
+        # Tell Origin what they prepared
+        await session_manager.send_to(session, "origin", make_msg(
+            "bb84_prepare",
+            bits=origin_bits,
+            bases=origin_bases,
+            count=NUM_QUBITS,
         ))
 
-    await asyncio.sleep(0.5)
+        await asyncio.sleep(0.5)
 
-    # Target receives the batch (possibly disturbed by intruder)
-    await session_manager.send_to(session, "target", make_msg(
-        "bb84_transmit",
-        qubits=qubits,
-    ))
+        # Intruder doesn't manually do stuff. Server applies interception using Qiskit, then tells intruder what happened.
+        qubits = encode_qubits(origin_bits, origin_bases)
+        intruder_active = (
+            "intruder" in session.devices
+            and session.intruder_settings.attackActive
+        )
+        intercepted_count = 0
 
-    timeout = 15  # seconds
-    start = asyncio.get_event_loop().time()
+        if intruder_active:
+            intensity = session.intruder_settings.interceptionIntensity
+            for i, q in enumerate(qubits):
+                if should_intercept(True, intensity):
+                    intercepted_count += 1
+                    eve_basis = intercept_choose_basis()
+                    # Qiskit measures the qubit — collapses it
+                    measured_bit = measure_qubit(q["bit"], q["basis"], eve_basis)
+                    # Eve re-sends in her own basis (disturbs state)
+                    qubits[i] = {"bit": measured_bit, "basis": eve_basis}
 
-    while True:
-        if session.bb84_ready:
-            break
+            # Tell intruder what they intercepted (summary, not the key)
+            await session_manager.send_to(session, "intruder", make_msg(
+                "bb84_intercept_result",
+                intercepted=intercepted_count,
+                total=NUM_QUBITS,
+                intensity=intensity,
+            ))
 
-        if asyncio.get_event_loop().time() - start > timeout:
-            session.phase = "aborted"
-            session.metrics.transferSuccess = False
+        await asyncio.sleep(0.5)
+
+        # Target receives the batch (possibly disturbed by intruder)
+        await session_manager.send_to(session, "target", make_msg(
+            "bb84_transmit",
+            qubits=qubits,
+        ))
+
+        timeout = 15  # seconds
+        start = asyncio.get_event_loop().time()
+
+        while True:
+            if session.bb84_ready:
+                break
+
+            if asyncio.get_event_loop().time() - start > timeout:
+                session.phase = "aborted"
+                session.metrics.transferSuccess = False
+                await session_manager.broadcast(session, make_msg(
+                    "phase_update", phase=session.phase
+                ))
+                return
+
+            await asyncio.sleep(0.1)
+
+        target_bits = session.bb84_target_bits
+        target_bases = session.bb84_target_bases
+
+        # QBER and sift key
+        qber = compute_qber(origin_bits, target_bits, origin_bases, target_bases)
+        key_bits = sift_key(origin_bits, origin_bases, target_bits, target_bases)
+        session.metrics.qber = qber
+
+        # Broadcast QBER to all devices
+        await session_manager.broadcast(session, make_msg(
+            "bb84_result",
+            qber=qber,
+            sifted_key_length=len(key_bits),
+            detected=qber > QBER_THRESHOLD,
+        ))
+
+        await asyncio.sleep(0.5)
+
+        # decides the outcome
+        if qber < QBER_THRESHOLD:
+            # if the key was accepted, rebuilds the key and then transfers the file
+            raw_bytes = bits_to_bytes(key_bits)
+            key_bytes = derive_aes_key(raw_bytes)
+            key_b64 = base64.b64encode(key_bytes).decode()
+
+            session.shared_key = key_bytes
+            session.metrics.keyEstablished = True
+            session.metrics.intruderDetected = False
+
+            # Origin gets key
+            await session_manager.send_to(session, "origin", make_msg(
+                "key_established", key=key_b64, mode="quantum"
+            ))
+
+            await asyncio.sleep(0.3)
+
+            # Key travels over channel so that the intruder can't capture it
+            if "intruder" in session.devices:
+                await session_manager.send_to(session, "intruder", make_msg(
+                    "key_established",
+                    mode="quantum",
+                    captured=False,
+                    reason="QBER within threshold — key bits are secure",
+                ))
+                await asyncio.sleep(0.3)
+
+            # Target gets key
+            await session_manager.send_to(session, "target", make_msg(
+                "key_established", key=key_b64, mode="quantum"
+            ))
+
+            await session_manager.broadcast(session, make_msg(
+                "metrics_update", metrics=session.metrics.model_dump()
+            ))
+
+            session.phase = "transferring"
+
             await session_manager.broadcast(session, make_msg(
                 "phase_update", phase=session.phase
             ))
             return
 
-        await asyncio.sleep(0.1)
-
-    target_bits = session.bb84_target_bits
-    target_bases = session.bb84_target_bases
-
-    # QBER and sift key
-    qber = compute_qber(origin_bits, target_bits, origin_bases, target_bases)
-    key_bits = sift_key(origin_bits, origin_bases, target_bits, target_bases)
-    session.metrics.qber = qber
-
-    # Broadcast QBER to all devices
-    await session_manager.broadcast(session, make_msg(
-        "bb84_result",
-        qber=qber,
-        sifted_key_length=len(key_bits),
-        detected=qber > QBER_THRESHOLD,
-    ))
-
-    await asyncio.sleep(0.5)
-
-    # decides the outcome
-    if qber > QBER_THRESHOLD:
+        # Intrusion detected — notify all clients and retry
         session.metrics.intruderDetected = True
         session.metrics.keyEstablished = False
-        session.metrics.transferSuccess = False
-        session.phase = "aborted"
 
         await session_manager.broadcast(session, make_msg(
             "metrics_update", metrics=session.metrics.model_dump()
         ))
         await session_manager.broadcast(session, make_msg(
-            "phase_update", phase=session.phase
+            "bb84_retry",
+            attempt=session.metrics.keyExchangeAttempts,
+            max_attempts=MAX_ATTEMPTS,
+            qber=qber,
         ))
-        session.bb84_ready = False
-        return
 
-    # if the key was accepted, rebuilds the key and then transfers the file
-    raw_bytes = bits_to_bytes(key_bits)
-    key_bytes = derive_aes_key(raw_bytes)
-    key_b64 = base64.b64encode(key_bytes).decode()
-
-    session.shared_key = key_bytes
-    session.metrics.keyEstablished = True
-    session.metrics.intruderDetected = False
-
-    # Origin gets key
-    await session_manager.send_to(session, "origin", make_msg(
-        "key_established", key=key_b64, mode="quantum"
-    ))
-
-    await asyncio.sleep(0.3)
-
-    # Key travels over channel so that the intruder can't capture it
-    if "intruder" in session.devices:
-        await session_manager.send_to(session, "intruder", make_msg(
-            "key_established",
-            mode="quantum",
-            captured=False,
-            reason="QBER within threshold — key bits are secure",
-        ))
-        await asyncio.sleep(0.3)
-
-    # Target gets key
-    await session_manager.send_to(session, "target", make_msg(
-        "key_established", key=key_b64, mode="quantum"
-    ))
-
-    await session_manager.broadcast(session, make_msg(
-        "metrics_update", metrics=session.metrics.model_dump()
-    ))
-
-    session.phase = "transferring"
+        # Pause so users can see the retry message before next attempt
+        await asyncio.sleep(2.0)
+        continue
+    
+    session.phase = "aborted"
     await session_manager.broadcast(session, make_msg(
         "phase_update", phase=session.phase
     ))
-
-    session.bb84_ready = False

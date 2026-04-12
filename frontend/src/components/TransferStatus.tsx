@@ -58,6 +58,13 @@ export function TransferStatus({ phase, metrics, mode, role }: Props) {
         </div>
       )}
 
+      {phase === "key_exchange" && mode === "quantum" && metrics.intruderDetected && metrics.keyExchangeAttempts > 1 && (
+        <div className="transfer-status__message transfer-status__message--warning">
+          <p>Intrusion detected via QBER ({metrics.qber !== null ? `${(metrics.qber * 100).toFixed(1)}%` : "N/A"})! Key discarded.</p>
+          <p>Re-exchanging key — attempt {metrics.keyExchangeAttempts}...</p>
+        </div>
+      )}
+
       {(phase === "key_exchange" || phase === "transferring") && (
         <div className="transfer-status__progress">
           <div className="transfer-status__spinner" />

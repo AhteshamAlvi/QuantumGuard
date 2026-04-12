@@ -70,6 +70,7 @@ export type WsMessageType =
   | "bb84_transmit"           // Server → Target (qubits to measure)
   | "bb84_intercept_result"   // Server → Intruder (interception summary)
   | "bb84_result"             // Server → All (QBER + outcome)
+  | "bb84_retry"             // Server → All (intrusion detected, retrying)
   // Server → Client (file transfer)
   | "file_encrypted"
   | "intercepted_file"
