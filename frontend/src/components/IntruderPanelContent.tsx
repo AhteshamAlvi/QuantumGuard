@@ -17,7 +17,6 @@ export function IntruderPanelContent({ receiverBits, totalBits }: Props) {
 
   // For the timeline, show bits that have arrived so far
   const arrivedCount = receiverBits.filter(b => b !== null).length;
-  const progress = totalBits > 0 ? arrivedCount / totalBits : 0;
 
   return (
     <div className="intruder-panel">
