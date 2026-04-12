@@ -16,6 +16,8 @@ class Metrics(BaseModel):
     intruderDetected: bool = False
     intruderCapturedKey: bool = False
     intruderCapturedFile: bool = False
+    interceptedCount: int = 0
+    totalQubits: int = 0
     fileHashMatch: bool | None = None
     transferSuccess: bool | None = None
 

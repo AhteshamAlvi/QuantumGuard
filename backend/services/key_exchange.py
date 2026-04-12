@@ -51,14 +51,14 @@ async def _run_classical(session: Session) -> None:
     session.metrics.keyExchangeAttempts = 1
     session.shared_key = key_bytes
 
-    await asyncio.sleep(1.5)  # dramatic pause
+    await asyncio.sleep(4.0)  # dramatic pause
 
     # Step 1: Origin receives/generated key
     await session_manager.send_to(session, "origin", make_msg(
         "key_generated", key=key_b64, mode="classical"
     ))
 
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(2.0)
 
     # Step 2: Simulate transmission over channel
     if "intruder" in session.devices and session.intruder_settings.attackActive:
@@ -69,7 +69,7 @@ async def _run_classical(session: Session) -> None:
             "intercepted_key", key=key_b64, mode="classical"
         ))
 
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(2.0)
 
         # Intruder forwards the SAME key (passive MITM)
         await session_manager.send_to(session, "target", make_msg(
@@ -125,7 +125,7 @@ async def _run_quantum(session: Session) -> None:
             count=NUM_QUBITS,
         ))
 
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(2.0)
 
         # Intruder doesn't manually do stuff. Server applies interception using Qiskit, then tells intruder what happened.
         qubits = encode_qubits(origin_bits, origin_bases)
@@ -146,6 +146,10 @@ async def _run_quantum(session: Session) -> None:
                     # Eve re-sends in her own basis (disturbs state)
                     qubits[i] = {"bit": measured_bit, "basis": eve_basis}
 
+            # Store interception stats in metrics
+            session.metrics.interceptedCount = intercepted_count
+            session.metrics.totalQubits = NUM_QUBITS
+
             # Tell intruder what they intercepted (summary, not the key)
             await session_manager.send_to(session, "intruder", make_msg(
                 "bb84_intercept_result",
@@ -154,7 +158,11 @@ async def _run_quantum(session: Session) -> None:
                 intensity=intensity,
             ))
 
-        await asyncio.sleep(0.5)
+            await session_manager.broadcast(session, make_msg(
+                "metrics_update", metrics=session.metrics.model_dump()
+            ))
+
+        await asyncio.sleep(3.0)
 
         # Target receives the batch (possibly disturbed by intruder)
         await session_manager.send_to(session, "target", make_msg(
@@ -162,7 +170,7 @@ async def _run_quantum(session: Session) -> None:
             qubits=qubits,
         ))
 
-        timeout = 15  # seconds
+        timeout = 30  # seconds
         start = asyncio.get_event_loop().time()
 
         while True:
@@ -195,7 +203,7 @@ async def _run_quantum(session: Session) -> None:
             detected=qber > QBER_THRESHOLD,
         ))
 
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(3.0)
 
         # decides the outcome
         if qber < QBER_THRESHOLD:
@@ -213,7 +221,7 @@ async def _run_quantum(session: Session) -> None:
                 "key_established", key=key_b64, mode="quantum"
             ))
 
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(2.0)
 
             # Key travels over channel so that the intruder can't capture it
             if "intruder" in session.devices:
@@ -223,7 +231,7 @@ async def _run_quantum(session: Session) -> None:
                     captured=False,
                     reason="QBER within threshold — key bits are secure",
                 ))
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(2.0)
 
             # Target gets key
             await session_manager.send_to(session, "target", make_msg(
@@ -256,7 +264,7 @@ async def _run_quantum(session: Session) -> None:
         ))
 
         # Pause so users can see the retry message before next attempt
-        await asyncio.sleep(2.0)
+        await asyncio.sleep(5.0)
         continue
     
     session.phase = "aborted"

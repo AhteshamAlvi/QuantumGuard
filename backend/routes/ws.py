@@ -173,7 +173,7 @@ async def _run_file_transfer(session: Session) -> None:
         "file_encrypted", hash=original_hash
     ))
 
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(3.0)
 
     # Step 2: Route through Intruder (if connected and active)
     if "intruder" in session.devices and session.intruder_settings.attackActive:
@@ -207,7 +207,7 @@ async def _run_file_transfer(session: Session) -> None:
             "metrics_update", metrics=session.metrics.model_dump()
         ))
 
-        await asyncio.sleep(1.0)
+        await asyncio.sleep(4.0)
 
         # Intruder forwards to Target (data passes through unchanged)
         await session_manager.send_to(session, "target", make_msg(
@@ -227,7 +227,7 @@ async def _run_file_transfer(session: Session) -> None:
             via="direct",
         ))
 
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(3.0)
 
     # Step 3: Decrypt at Target
     decrypted = aes_decrypt(nonce, ciphertext, key)
