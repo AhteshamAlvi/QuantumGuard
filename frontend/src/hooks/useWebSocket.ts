@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useSessionContext } from "../context/SessionContext";
+import { measureQubit, randomBasis } from "../lib/quantum";
 import type { WsMessage, SessionPhase, DeviceInfo } from "../types";
 
 export const WS_BASE = import.meta.env.VITE_WS_URL ?? "ws://localhost:8000";
@@ -53,13 +54,38 @@ export function useWebSocket() {
           if (msg.mode) dispatch({ type: "SET_MODE", mode: msg.mode as "classical" | "quantum" });
           break;
 
+        // ── BB84: Target auto-measurement ──
+        // When Target receives qubits, it picks random bases,
+        // measures each qubit, and sends results back immediately.
+        case "bb84_transmit": {
+          if (session.role !== "target") break;
+          const qubits = msg.qubits as { bit: number; basis: string }[];
+          const bits: number[] = [];
+          const bases: string[] = [];
+
+          for (const q of qubits) {
+            const basis = randomBasis();
+            const bit = measureQubit(q.bit, q.basis, basis);
+            bits.push(bit);
+            bases.push(basis);
+          }
+
+          // Send measurement results back to server
+          ws.send(JSON.stringify({
+            type: "bb84_measurement",
+            bits,
+            bases,
+          }));
+          break;
+        }
+
         case "error":
           console.error("[WS] Server error:", msg.message);
           break;
 
         default:
-          // Other message types (key_generated, intercepted_file, etc.)
-          // are dispatched as raw events for hooks to listen to
+          // Other message types (key_generated, bb84_prepare, etc.)
+          // are informational — frontend can display them in the future
           break;
       }
     };

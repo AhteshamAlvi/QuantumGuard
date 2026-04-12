@@ -113,6 +113,18 @@ async def _handle_message(session: Session, sender_role: str, msg: dict) -> None
             attackActive=payload.get("attackActive", True),
             interceptionIntensity=payload.get("interceptionIntensity", 0.5),
         )
+        
+
+    # ── BB84 ──
+    # Server handles Origin→Intruder routing internally (key_exchange.py).
+    # Only Target sends a message back: its measurement results.
+
+    elif msg_type == "bb84_measurement":
+        if sender_role != "target":
+            return
+        session.bb84_target_bits = msg.get("bits", [])
+        session.bb84_target_bases = msg.get("bases", [])
+        session.bb84_ready = True
 
     # File transfer is server-driven after key exchange completes.
     # See _run_file_transfer() — no client messages needed for transfer.

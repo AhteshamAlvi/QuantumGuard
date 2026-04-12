@@ -7,13 +7,13 @@ from services import session_manager
 
 router = APIRouter()
 
-
+# creates a session and gives you its code.
 @router.post("/sessions")
 async def create_session():
     session = session_manager.create_session()
     return {"session_id": session.session_id}
 
-
+# Join session endpoint
 @router.post("/sessions/{session_id}/join")
 async def join_session(session_id: str):
     session = session_manager.get_session(session_id)

@@ -46,6 +46,7 @@ export type WsMessageType =
   | "file_upload"
   | "file_binary"
   | "intruder_settings"
+  | "bb84_measurement"        // Target → Server (measurement results)
   // Server → Client (session)
   | "session_state"
   | "phase_update"
@@ -53,12 +54,15 @@ export type WsMessageType =
   | "device_update"
   | "mode_update"
   | "error"
-  // Server → Client (key exchange)
+  // Server → Client (key exchange — classical)
   | "key_generated"
   | "key_established"
   | "intercepted_key"
-  | "bb84_progress"
-  | "bb84_intercept"
+  // Server → Client (key exchange — quantum BB84)
+  | "bb84_prepare"            // Server → Origin (your bits/bases)
+  | "bb84_transmit"           // Server → Target (qubits to measure)
+  | "bb84_intercept_result"   // Server → Intruder (interception summary)
+  | "bb84_result"             // Server → All (QBER + outcome)
   // Server → Client (file transfer)
   | "file_encrypted"
   | "intercepted_file"
