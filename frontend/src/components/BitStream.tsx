@@ -26,7 +26,7 @@ export function BitStream({ senderBits, receiverBits, showSender, totalBits }: P
   if (totalBits === 0) {
     return <div className="bitstream__empty">Waiting for transmission...</div>;
   }
-  
+
   return (
     <div className="bitstream">
       <div className="bitstream__header">
@@ -47,11 +47,11 @@ export function BitStream({ senderBits, receiverBits, showSender, totalBits }: P
           <div className="bitstream__grid">
             {showSender
               ? senderBits.map((b, i) => (
-                  <span key={i} className={`bitstream__bit bitstream__bit--${b}`}>{b}</span>
-                ))
+                <span key={i} className={`bitstream__bit bitstream__bit--${b}`}>{b}</span>
+              ))
               : Array.from({ length: totalBits }, (_, i) => (
-                  <span key={i} className="bitstream__bit bitstream__bit--hidden">-</span>
-                ))
+                <span key={i} className="bitstream__bit bitstream__bit--hidden">-</span>
+              ))
             }
           </div>
         </div>

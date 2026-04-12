@@ -1266,3 +1266,174 @@
   border: 1px dashed var(--border-dim);
   border-radius: var(--radius-md);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Quantum Circuit Visualization (Origin / Intruder / Target)
+   ═══════════════════════════════════════════════════════════════ */
+
+.simulation-page__bottom {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 40px;
+}
+
+/* ── Container ───────────────────────────── */
+
+.circuit {
+  width: 640px;
+  height: 180px;
+  position: relative;
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  background: var(--gray-900);
+  box-shadow:
+    inset 0 0 40px rgba(139, 92, 246, 0.04),
+    0 0 30px rgba(139, 92, 246, 0.08);
+  overflow: visible;
+}
+
+/* ── Wires (3 channels: Origin, Intruder, Target) ───────────── */
+
+.wire {
+  stroke: rgba(34, 211, 238, 0.25);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.25));
+}
+
+.wire--intruder {
+  stroke: rgba(248, 113, 113, 0.25);
+  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.3));
+  stroke-dasharray: 6 4;
+}
+
+/* ── Gate Boxes ─────────────────────────── */
+
+.gate {
+  fill: rgba(34, 211, 238, 0.05);
+  stroke: rgba(34, 211, 238, 0.8);
+  stroke-width: 1.5;
+  rx: 6;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.2));
+}
+
+.gate:hover {
+  stroke: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+
+/* Intruder gates (red tone) */
+.gate--intruder {
+  stroke: var(--danger);
+  fill: rgba(248, 113, 113, 0.08);
+  filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.35));
+}
+
+/* Measurement gate (Target side) */
+.measure {
+  stroke: var(--purple-400);
+  fill: rgba(139, 92, 246, 0.08);
+  filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.35));
+}
+
+/* ── Gate Text ─────────────────────────── */
+
+.circuit text {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  fill: var(--accent-cyan);
+  pointer-events: none;
+}
+
+.circuit text.intruder-text {
+  fill: var(--danger);
+}
+
+/* ── Labels (Origin / Intruder / Target) ─ */
+
+.circuit-label {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  fill: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+.circuit-label--intruder {
+  fill: var(--danger);
+}
+
+/* ── Particles (Packets / Qubits) ─────── */
+
+.qubit {
+  fill: var(--accent-cyan);
+  r: 4;
+  filter:
+    drop-shadow(0 0 6px var(--accent-cyan))
+    drop-shadow(0 0 12px rgba(34, 211, 238, 0.5));
+  transition: cx 0.08s linear;
+}
+
+/* alternating color (multi packets) */
+.qubit:nth-child(odd) {
+  fill: var(--purple-400);
+  filter:
+    drop-shadow(0 0 6px var(--purple-400))
+    drop-shadow(0 0 12px rgba(139, 92, 246, 0.5));
+}
+
+/* intercepted / failed packets */
+.qubit--dead {
+  fill: var(--danger);
+  opacity: 0.35;
+  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.4));
+}
+
+/* packets while passing through intruder */
+.qubit--intercepted {
+  fill: var(--danger);
+  filter:
+    drop-shadow(0 0 8px var(--danger))
+    drop-shadow(0 0 16px rgba(248, 113, 113, 0.6));
+}
+
+/* ── Intruder vertical tap line ───────── */
+
+.circuit__intercept-line {
+  stroke: rgba(248, 113, 113, 0.4);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+
+/* ── Glow Animation ───────────────────── */
+
+@keyframes circuit-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(34, 211, 238, 0.5));
+  }
+}
+
+.circuit--active .wire {
+  animation: circuit-pulse 2.5s ease-in-out infinite;
+}
+
+/* ── Scanline Overlay ─────────────────── */
+
+.circuit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(139, 92, 246, 0.03) 50%,
+      transparent 100%
+    );
+  background-size: 100% 6px;
+  animation: scan 4s linear infinite;
+  pointer-events: none;
+  opacity: 0.4;
+}

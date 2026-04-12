@@ -13,6 +13,7 @@ import { TransferStatus } from "../components/TransferStatus";
 import { BitStream } from "../components/BitStream";
 import { Panel } from "../components/Panel";
 import { FilePreview } from "../components/FilePreview";
+import { CircuitView } from "../components/CircuitView";
 
 export function SimulationPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export function SimulationPage() {
     }
 
     if (streamStartedRef.current) return;
-    if (isIntruder) return;
+    if (!isOrigin && !isTarget && !isIntruder) return;
 
     const errorRate =
       mode === "classical"
@@ -55,12 +56,11 @@ export function SimulationPage() {
       if (!fileBits || fileBits.length === 0) return;
 
       stream.startStream(fileBits, errorRate);
-    } else if (isTarget) {
-      // Target does NOT have fileBits — must still start stream
-      const expectedLength = 512; // or match your MAX_BITS
+    } else if (isTarget || isIntruder) {
+      const expectedLength = 512;
 
       stream.startStream(
-        Array.from({ length: expectedLength }, () => Math.round(Math.random())),
+        new Array(expectedLength).fill(0),
         errorRate
       );
     }
@@ -204,6 +204,18 @@ export function SimulationPage() {
               </button>
             </div>
           )}
+
+          {(isRunning || isDone) && (
+            <div className="simulation-page__bottom">
+              <div className="simulation-page__circuit">
+                <CircuitView
+                  streaming={stream.streaming}
+                  totalBits={stream.totalBits}
+                  receiverBits={stream.receiverBits}
+                />
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -235,5 +247,6 @@ export function SimulationPage() {
         />
       </Panel>
     </div>
+
   );
 }
