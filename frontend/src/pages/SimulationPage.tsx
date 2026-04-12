@@ -24,20 +24,9 @@ export function SimulationPage() {
   const stream = useTransferStream(session.role);
   const streamStartedRef = useRef(false);
 
-  if (!session.sessionId) {
-    navigate("/");
-    return null;
-  }
-
-  const isLobby = phase === "lobby";
-  const isRunning = phase === "key_exchange" || phase === "transferring";
-  const isDone = phase === "complete" || phase === "aborted" || phase === "failed";
-  const isOrigin = session.role === "origin";
   const isIntruder = session.role === "intruder";
 
   // Reactively start the bit stream when phase transitions to "transferring".
-  // Works for both Origin and Target — fileBits is pre-computed on upload.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (phase !== "transferring") {
       streamStartedRef.current = false;
@@ -59,14 +48,30 @@ export function SimulationPage() {
     stream.startStream(fileBits, errorRate);
   }, [phase, fileBits, mode, isIntruder, intruderSettings, stream]);
 
+  if (!session.sessionId) {
+    navigate("/");
+    return null;
+  }
+
+  const isLobby = phase === "lobby";
+  const isRunning = phase === "key_exchange" || phase === "transferring";
+  const isDone = phase === "complete" || phase === "aborted" || phase === "failed";
+  const isOrigin = session.role === "origin";
+
+  // Check if all 3 roles are connected
+  const allConnected = session.devices.length === 3
+    && session.devices.every((d) => d.connected);
+
   const handleReset = () => {
     reset();
     stream.resetStream();
     streamStartedRef.current = false;
   };
 
-  // Show BitStream for Origin and Target — never for Intruder
   const showBitStream = !isIntruder && (isRunning || isDone) && stream.totalBits > 0;
+
+  // Origin can only start when all 3 devices are connected + mode + file selected
+  const canStart = allConnected && !!mode && !!file;
 
   return (
     <div className="simulation-page">
@@ -75,7 +80,7 @@ export function SimulationPage() {
       <div className="simulation-page__body">
         {/* Sidebar */}
         <aside className="simulation-page__sidebar">
-          <DeviceStatus devices={session.devices} />
+          <DeviceStatus devices={session.devices} myRole={session.role} />
 
           {isIntruder && (
             <IntruderControls
@@ -89,21 +94,42 @@ export function SimulationPage() {
 
         {/* Main content */}
         <main className="simulation-page__main">
-          {isLobby && (
+          {isLobby && isOrigin && (
             <div className="simulation-page__setup">
-              <ModeSelect selected={mode} onSelect={selectMode} disabled={isRunning} />
+              <ModeSelect
+                selected={mode}
+                onSelect={selectMode}
+                disabled={isRunning || !allConnected}
+              />
+              <FileUpload file={file} onUpload={uploadFile} disabled={isRunning} />
 
-              {isOrigin && (
-                <FileUpload file={file} onUpload={uploadFile} disabled={isRunning} />
+              {!allConnected && (
+                <p className="simulation-page__waiting-hint">
+                  Waiting for all devices to connect before starting...
+                </p>
               )}
 
               <button
                 className="btn btn--primary btn--lg"
                 onClick={startSimulation}
-                disabled={!mode || (isOrigin && !file)}
+                disabled={!canStart}
+                title={!allConnected ? "All 3 devices must be connected" : !mode ? "Select a mode first" : !file ? "Upload a file first" : ""}
               >
                 Start Simulation
               </button>
+            </div>
+          )}
+
+          {isLobby && !isOrigin && (
+            <div className="simulation-page__setup">
+              <p className="simulation-page__waiting">
+                Waiting for Origin to select mode and start the simulation...
+              </p>
+              {mode && (
+                <p className="simulation-page__mode-info">
+                  Mode selected: <strong>{mode === "classical" ? "Classical" : "Quantum (BB84)"}</strong>
+                </p>
+              )}
             </div>
           )}
 

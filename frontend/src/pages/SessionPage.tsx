@@ -7,16 +7,23 @@ export function SessionPage() {
   const navigate = useNavigate();
   const { session, loading, error, createSession, joinSession, selectRole } = useSession();
   const [joinCode, setJoinCode] = useState("");
+  const [isCreator, setIsCreator] = useState(false);
 
   const hasSession = !!session.sessionId;
   const canProceed = hasSession && !!session.role;
 
   async function handleCreate() {
     await createSession();
+    setIsCreator(true);
+    // Auto-assign Origin to session creator
+    selectRole("origin");
   }
 
   async function handleJoin() {
-    if (joinCode.trim()) await joinSession(joinCode.trim().toUpperCase());
+    if (joinCode.trim()) {
+      await joinSession(joinCode.trim().toUpperCase());
+      setIsCreator(false);
+    }
   }
 
   function handleContinue() {
@@ -54,17 +61,34 @@ export function SessionPage() {
           </div>
           {error && <p className="session-page__error">{error}</p>}
         </div>
-      ) : (
+      ) : isCreator ? (
+        /* Creator sees code + auto-assigned as Origin */
         <div className="session-page__setup">
           <div className="session-page__code-display">
             <p>Share this code with other devices:</p>
             <code className="session-page__code">{session.sessionId}</code>
           </div>
 
+          <p className="session-page__role-assigned">
+            You are the <strong>Origin</strong> (sender)
+          </p>
+
+          <button
+            className="btn btn--primary btn--lg"
+            onClick={handleContinue}
+            disabled={!canProceed}
+          >
+            Continue
+          </button>
+        </div>
+      ) : (
+        /* Joiner picks Target or Intruder only — no session code shown */
+        <div className="session-page__setup">
           <RoleSelect
             selected={session.role}
             onSelect={selectRole}
             disabled={loading}
+            excludeOrigin
           />
 
           <button

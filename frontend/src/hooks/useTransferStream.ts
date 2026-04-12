@@ -1,26 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { Role } from "../types";
 
-// TODO [WIRING]: Replace the demo stub below with real WebSocket bit streaming.
-//
-// Backend flow (routes/ws.py):
-//   Origin uploads file → backend converts to bits via file_to_bits()
-//   Backend sends { type: "init", sender_bits, length } to Origin
-//   Backend streams { type: "bit", index, value } to both Origin & Target
-//   Backend sends { type: "done", sender_bits, receiver_bits } at end
-//
-// Origin WebSocket (ws/sender):
-//   On connect, send file as binary frame.
-//   On "init", populate senderBits immediately.
-//   On "bit", fill receiverBits[index].
-//
-// Target WebSocket (ws/receiver):
-//   On "bit", append to receiverBits.
-//   On "complete", reveal senderBits (showSender = true).
-//
-// Intruder:
-//   Gets NOTHING. No stream, no bits, no visualization.
-
 const MAX_BITS = 512;
 
 /** Converts raw bytes to a truncated bit array. */

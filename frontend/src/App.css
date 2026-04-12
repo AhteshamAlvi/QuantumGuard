@@ -143,6 +143,15 @@
   box-shadow: 0 0 30px var(--accent-glow), inset 0 0 30px rgba(139, 92, 246, 0.03);
 }
 
+.session-page__role-assigned {
+  color: var(--text-m);
+  font-size: 1.1rem;
+  text-align: center;
+}
+.session-page__role-assigned strong {
+  color: var(--accent-cyan);
+}
+
 /* ── Role Select ───────────────────────────────────────────── */
 
 .role-select {
@@ -160,9 +169,10 @@
 }
 
 .role-select__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  justify-content: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .role-select__card {
@@ -171,6 +181,9 @@
   align-items: center;
   gap: 8px;
   padding: 24px 16px;
+  min-width: 180px;
+  max-width: 220px;
+  flex: 1;
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-md);
   background: var(--bg-card);
@@ -346,6 +359,29 @@
   width: 100%;
 }
 
+.simulation-page__waiting {
+  color: var(--text-m);
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+.simulation-page__waiting-hint {
+  color: var(--warning, #f59e0b);
+  font-size: 0.9rem;
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+.simulation-page__mode-info {
+  color: var(--text-l);
+  text-align: center;
+}
+
+.simulation-page__mode-info strong {
+  color: var(--accent-purple);
+}
+
 .simulation-page__actions {
   display: flex;
   gap: 12px;
@@ -494,19 +530,36 @@
   color: var(--gray-500);
 }
 .device-status__item--connected {
-  color: var(--text-h);
+  color: var(--purple-400);
+  text-shadow: 0 0 8px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.3);
 }
 
 .device-status__dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--gray-600);
   flex-shrink: 0;
 }
 .device-status__item--connected .device-status__dot {
-  background: var(--success);
-  box-shadow: 0 0 8px var(--success), 0 0 16px rgba(52, 211, 153, 0.2);
+  background: var(--purple-400);
+  box-shadow: 0 0 8px var(--purple-400), 0 0 16px rgba(139, 92, 246, 0.4);
+}
+
+/* Your own role glows cyan */
+.device-status__item--me.device-status__item--connected {
+  color: var(--accent-cyan);
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.6), 0 0 20px rgba(34, 211, 238, 0.3);
+}
+.device-status__item--me.device-status__item--connected .device-status__dot {
+  background: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan), 0 0 16px rgba(34, 211, 238, 0.4);
+}
+
+.device-status__you {
+  font-size: 0.7em;
+  opacity: 0.7;
+  text-transform: lowercase;
 }
 
 .device-status__role {

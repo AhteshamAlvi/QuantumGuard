@@ -18,7 +18,7 @@ export function BitStream({ senderBits, receiverBits, showSender, totalBits }: P
   useEffect(() => {
     const el = receiverRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [receiverBits.length]);
+  }, [receiverBits.filter((b) => b !== null).length]);
 
   const filledCount = receiverBits.filter((b) => b !== null).length;
   const progress = totalBits > 0 ? filledCount / totalBits : 0;

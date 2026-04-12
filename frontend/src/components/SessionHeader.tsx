@@ -7,6 +7,7 @@ const PHASE_LABELS: Record<string, string> = {
   transferring: "Transferring file...",
   complete: "Simulation complete",
   aborted: "Transfer aborted",
+  failed: "Transfer failed",
 };
 
 export function SessionHeader() {

@@ -10,14 +10,17 @@ interface Props {
   selected: Role | null;
   onSelect: (role: Role) => void;
   disabled?: boolean;
+  excludeOrigin?: boolean;
 }
 
-export function RoleSelect({ selected, onSelect, disabled }: Props) {
+export function RoleSelect({ selected, onSelect, disabled, excludeOrigin }: Props) {
+  const roles = excludeOrigin ? ROLES.filter((r) => r.value !== "origin") : ROLES;
+
   return (
     <div className="role-select">
       <h2 className="role-select__heading">Choose your role</h2>
       <div className="role-select__grid">
-        {ROLES.map((r) => (
+        {roles.map((r) => (
           <button
             key={r.value}
             className={`role-select__card role-select__card--${r.value}${selected === r.value ? " role-select__card--active" : ""}`}
