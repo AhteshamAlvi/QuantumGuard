@@ -271,6 +271,266 @@ QuantumGuard/
 
 The intruder's measurements use **Qiskit Aer** (a real quantum circuit simulator) to model qubit collapse accurately. The Target's measurements use a simplified client-side simulation (`lib/quantum.ts`). The QBER computation happens server-side by comparing Origin's and Target's bits on matching bases.
 
+Unlike abstract descriptions, this implementation is **server-orchestrated and network-aware**, where all communication flows through an intermediate channel:
+
+```
+Origin → Intruder → Target
+```
+
+This models a real **man-in-the-middle (MITM)** scenario.
+
+---
+
+### Step 1 — Qubit Generation (Server-Side)
+
+The backend generates a sequence of qubits:
+
+* Random bit string:
+  $$
+  b_i \in {0,1}
+  $$
+
+* Random basis string:
+  $$
+  \theta_i \in {Z, X}
+  $$
+
+Each pair $(b_i, \theta_i)$ defines a qubit.
+
+These qubits are not transmitted as physical quantum states, but are **modeled probabilistically** using quantum rules.
+
+---
+
+### Step 2 — Encoding (Origin Perspective)
+
+Each qubit is conceptually encoded as:
+
+* Z-basis:
+  $$
+  0 \rightarrow |0\rangle, \quad 1 \rightarrow |1\rangle
+  $$
+
+* X-basis:
+  $$
+  0 \rightarrow |+\rangle, \quad 1 \rightarrow |-\rangle
+  $$
+
+In the simulation:
+
+* This encoding is represented as **state vectors**
+* The frontend visualizes these states using the **Bloch sphere**
+
+---
+
+### Step 3 — Transmission Through Network Channel
+
+The qubits are streamed from:
+
+```
+Origin → Intruder → Target
+```
+
+This is implemented as:
+
+* Real-time WebSocket message flow
+* Bit-by-bit streaming visualization
+* Animated circuit showing qubit progression
+
+At this stage, no measurement has occurred — the qubits remain in superposition.
+
+---
+
+### Step 4 — Intruder Interaction (Eavesdropping Simulation)
+
+If the intruder is active:
+
+* A subset of qubits is intercepted (based on intensity setting)
+* For each intercepted qubit, the intruder selects a random basis:
+  $$
+  \theta_E \in {Z, X}
+  $$
+
+The intruder then:
+
+1. Measures the qubit
+2. Collapses its state
+3. Re-encodes and forwards it to the Target
+
+---
+
+#### Key Effect
+
+If:
+$$
+\theta_E \ne \theta_i
+$$
+
+Then:
+
+* The state collapses incorrectly
+* The forwarded qubit no longer matches the original
+
+This is the **source of detectable errors**.
+
+---
+
+### Step 5 — Measurement at Target
+
+The Target independently selects a random basis:
+
+$$
+\theta'_i \in {Z, X}
+$$
+
+Measurement results:
+
+* If:
+  $$
+  \theta'_i = \theta_i
+  $$
+  → Correct result with probability 1
+
+* If:
+  $$
+  \theta'_i \ne \theta_i
+  $$
+  →
+  $$
+  P(0) = P(1) = \frac{1}{2}
+  $$
+
+This behavior is simulated:
+
+* Partially using Qiskit (backend)
+* Partially using probabilistic logic (frontend)
+
+---
+
+### Step 6 — Basis Matching (Sifting Phase)
+
+After transmission, the backend performs **basis reconciliation**:
+
+* Origin’s basis $\theta_i$
+* Target’s basis $\theta'_i$
+
+Only indices where:
+$$
+\theta_i = \theta'_i
+$$
+
+are retained.
+
+All other bits are discarded.
+
+This produces the **sifted key**.
+
+---
+
+### Step 7 — Error Detection (QBER Calculation)
+
+The backend computes:
+
+$$
+QBER = \frac{\text{mismatched bits}}{\text{total compared bits}}
+$$
+
+This is displayed in real time in the frontend.
+
+---
+
+#### Interpretation
+
+* Low QBER → channel is secure
+* High QBER → intrusion detected
+
+In QuantumGuard:
+
+$$
+QBER \ge 11% \Rightarrow \text{Key Rejected}
+$$
+
+---
+
+### Step 8 — Retry Mechanism
+
+If intrusion is detected:
+
+* The key is discarded
+* The protocol restarts
+* Up to a maximum number of attempts
+
+This models real-world QKD behavior where **secure keys must be statistically verified**.
+
+---
+
+### Step 9 — Key Finalization
+
+If:
+
+$$
+QBER < 11%
+$$
+
+Then:
+
+* The sifted key is accepted
+* It is hashed into a fixed-length key
+* Used for AES-128 encryption in Phase 2
+
+---
+
+## Intruder Model (QuantumGuard-Specific)
+
+Unlike purely theoretical BB84, this project introduces a **configurable intruder**:
+
+* Can toggle interception ON/OFF
+* Adjustable interception intensity (0–100%)
+* Operates as a **network-level participant**
+
+This allows users to observe:
+
+* Partial interception (low QBER)
+* Full interception (high QBER)
+* Probabilistic detection behavior
+
+---
+
+## Visualization Mapping
+
+The BB84 protocol is directly mapped to frontend visual components:
+
+### Circuit View
+
+* Horizontal axis → time progression
+* Moving particles → qubits
+* Vertical transitions → interception event
+
+This shows **where and when interference occurs**.
+
+---
+
+### Bloch Sphere
+
+* Displays qubit state evolution:
+
+  * Initial state
+  * Basis transformation (H gate)
+  * Collapse due to measurement
+
+This shows **how the quantum state changes**.
+
+---
+
+### Metrics Panel
+
+* Displays QBER
+* Tracks key attempts
+* Shows intrusion detection status
+
+This shows **whether the protocol succeeded**.
+
+---
+
 ### Key constants
 
 | Constant | Value | Purpose |
