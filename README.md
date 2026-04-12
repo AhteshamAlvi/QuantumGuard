@@ -109,6 +109,43 @@ When a user opens the application, the frontend communicates with the deployed b
 
 No local setup, installation, or cloning is required—users can access the full application directly through the deployed link: `https://quantum-guard-eight.vercel.app/` .
 
+---
+
+### Prerequisites
+
+- **Node.js** v18+
+- **Python** 3.10+
+- **Qiskit** (installed automatically with pip)
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/AhteshamAlvi/QuantumGuard.git
+cd QuantumGuard
+```
+
+### 2. Start the backend
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+pip install qiskit qiskit-aer    # Quantum simulation engine
+uvicorn app:app --reload
+```
+
+The API runs at `https://quantum-guard-eight.vercel.app/`. Health check: `GET /api/health`.
+
+### 3. Start the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The app runs at `https://quantum-guard-eight.vercel.app/`.
 
 ---
 
