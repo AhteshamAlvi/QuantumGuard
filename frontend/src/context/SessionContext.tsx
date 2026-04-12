@@ -17,6 +17,8 @@ const initialMetrics: Metrics = {
   intruderDetected: false,
   intruderCapturedKey: false,
   intruderCapturedFile: false,
+  interceptedCount: 0,
+  totalQubits: 0,
   fileHashMatch: null,
   transferSuccess: null,
 };

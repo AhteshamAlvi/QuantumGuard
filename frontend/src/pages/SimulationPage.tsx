@@ -106,6 +106,9 @@ export function SimulationPage() {
     (isTarget && phase === "complete" && !!session.receivedFile) ||
     (isIntruder && metrics.intruderCapturedFile && !!session.receivedFile);
 
+  // Intruder analysis: available during running or after done
+  const canShowIntruderAnalysis = isIntruder && (isRunning || isDone);
+
   // Origin can only start when all 3 devices are connected + mode + file selected
   const canStart = allConnected && !!mode && !!file;
 
@@ -172,7 +175,7 @@ export function SimulationPage() {
           <TransferStatus phase={phase} metrics={metrics} mode={mode} role={session.role} />
 
           {/* Toolbar buttons */}
-          {(canShowBitStream || canShowFilePreview) && (
+          {(canShowBitStream || canShowFilePreview || canShowIntruderAnalysis) && (
             <div className="simulation-page__toolbar">
               {canShowBitStream && (
                 <button
@@ -188,6 +191,14 @@ export function SimulationPage() {
                   onClick={() => setFilePreviewOpen(true)}
                 >
                   {isIntruder ? "View Captured File" : "View File Preview"}
+                </button>
+              )}
+              {canShowIntruderAnalysis && (
+                <button
+                  className="btn btn--secondary btn--danger"
+                  onClick={() => setShowIntruderPanel(true)}
+                >
+                  View Interception Analysis
                 </button>
               )}
             </div>
@@ -209,15 +220,6 @@ export function SimulationPage() {
               >
                 Leave Session
               </button>
-
-              {isIntruder && (
-                <button
-                  className="btn btn--secondary"
-                  onClick={() => setShowIntruderPanel(true)}
-                >
-                  View Interception Analysis
-                </button>
-              )}
             </div>
           )}
 

@@ -94,7 +94,7 @@ export function useTransferStream(role: Role | null) {
 
             timerRef.current.push(revealId);
           }
-        }, i * 40);
+        }, i * 230);
 
         // ✅ Correct placement
         timerRef.current.push(id);

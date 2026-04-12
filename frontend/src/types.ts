@@ -35,6 +35,8 @@ export interface Metrics {
   intruderDetected: boolean;
   intruderCapturedKey: boolean;
   intruderCapturedFile: boolean;
+  interceptedCount: number;
+  totalQubits: number;
   fileHashMatch: boolean | null;
   transferSuccess: boolean | null;
 }
