@@ -32,14 +32,15 @@ export function useTransferStream(role: Role | null) {
 
   const isOrigin = role === "origin";
   const isTarget = role === "target";
+  const isIntruder = role === "intruder";
 
   /**
    * Start the bit stream visualization from a pre-computed bit array.
-   * Works for both Origin and Target — no File object required.
+   * Works for Origin, Target, and Intruder.
    */
   const startStream = useCallback(
     (bits: number[], errorRate: number) => {
-      if (!isOrigin && !isTarget) return;
+      if (!isOrigin && !isTarget && !isIntruder) return;
 
       // Clear previous
       timerRef.current.forEach(clearTimeout);
@@ -55,6 +56,9 @@ export function useTransferStream(role: Role | null) {
 
       if (isOrigin) {
         setSenderBits(bits);
+        setShowSender(false);
+      } else if (isIntruder) {
+        setSenderBits([]);
         setShowSender(false);
       } else {
         setSenderBits([]);
@@ -90,13 +94,13 @@ export function useTransferStream(role: Role | null) {
 
             timerRef.current.push(revealId);
           }
-        }, i * 15);
+        }, i * 40);
 
         // ✅ Correct placement
         timerRef.current.push(id);
       });
     },
-    [isOrigin, isTarget]
+    [isOrigin, isTarget, isIntruder]
   );
   
   const resetStream = useCallback(() => {

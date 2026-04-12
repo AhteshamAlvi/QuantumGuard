@@ -1273,7 +1273,8 @@
 
 .simulation-page__bottom {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
+  gap: 30px;
   margin-top: 40px;
 }
 
@@ -1436,4 +1437,241 @@
   animation: scan 4s linear infinite;
   pointer-events: none;
   opacity: 0.4;
+}
+
+.simulation-page__bloch {
+  width: 300px;
+  height: 300px;
+  background: var(--gray-900);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Bloch Sphere ────────────────────────── */
+
+.bloch-sphere {
+  width: 100%;
+  height: 100%;
+}
+
+.bloch-sphere__circle {
+  fill: none;
+  stroke: rgba(139, 92, 246, 0.25);
+  stroke-width: 1.5;
+}
+
+.bloch-sphere__equator {
+  fill: none;
+  stroke: rgba(139, 92, 246, 0.15);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.bloch-sphere__axis {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.bloch-sphere__label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  fill: var(--gray-500);
+}
+
+.bloch-sphere__vector {
+  stroke: var(--accent-cyan);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px var(--accent-cyan));
+  transition: x2 0.3s ease, y2 0.3s ease;
+}
+
+.bloch-sphere__tip {
+  fill: var(--accent-cyan);
+  filter: drop-shadow(0 0 8px var(--accent-cyan));
+  transition: cx 0.3s ease, cy 0.3s ease;
+}
+
+.bloch-sphere__gate-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  fill: var(--purple-400);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.bloch-sphere__state-label {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  fill: var(--gray-500);
+}
+
+/* ── Intruder Panel ───────────────────────── */
+
+.intruder-panel {
+  width: 520px;
+}
+
+.intruder-panel__body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Stats */
+.intruder-panel__stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.intruder-panel__stats div {
+  flex: 1;
+  background: rgba(248, 113, 113, 0.05);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.intruder-panel__stats strong {
+  color: var(--danger);
+}
+
+/* Timeline */
+.intruder-panel__timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+}
+
+.timeline-dot--hit {
+  background: var(--danger);
+  box-shadow: 0 0 6px var(--danger);
+}
+
+/* Collapse */
+.intruder-panel__collapse {
+  text-align: center;
+}
+
+.collapse-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+}
+
+.collapse-state.superposed {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, cyan, transparent);
+  animation: pulse 1s infinite;
+}
+
+.collapse-state.collapsed {
+  width: 40px;
+  height: 40px;
+  background: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: white;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   Classical Progress Panel
+   ═══════════════════════════════════════════════════════════════ */
+
+.simulation-page__progress {
+  width: 320px;
+  height: 200px;
+  padding: 20px;
+  background: var(--gray-900);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Header */
+.classical-progress__header {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+/* Bar container */
+.classical-progress__bar {
+  width: 100%;
+  height: 18px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Fill */
+.classical-progress__fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--accent-cyan),
+    var(--purple-400)
+  );
+  transition: width 0.2s ease-out;
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.4),
+    0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+/* Footer */
+.classical-progress__footer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.classical-progress__fill {
+  animation: progress-pulse 2s infinite;
+}
+
+@keyframes progress-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+.simulation-page__bottom--full {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Make progress bar fill the space */
+.simulation-page__bottom--full .classical-progress {
+  width: 100%;
+  max-width: 900px;
+}
+
+.simulation-page__bottom--full .classical-progress__bar {
+  height: 28px;
 }

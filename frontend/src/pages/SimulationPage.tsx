@@ -14,6 +14,9 @@ import { BitStream } from "../components/BitStream";
 import { Panel } from "../components/Panel";
 import { FilePreview } from "../components/FilePreview";
 import { CircuitView } from "../components/CircuitView";
+import { BlochSphereView } from "../components/BlochSphereView";
+import { IntruderPanelContent } from "../components/IntruderPanelContent";
+import { ClassicalProgress } from "../components/ClassicalProgress";
 
 export function SimulationPage() {
   const navigate = useNavigate();
@@ -30,6 +33,9 @@ export function SimulationPage() {
   // Panel visibility
   const [bitStreamOpen, setBitStreamOpen] = useState(false);
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
+  const [showIntruderPanel, setShowIntruderPanel] = useState(false);
+  const [activeBitIndex, setActiveBitIndex] = useState<number>(0);
+  const [activeGateStep, setActiveGateStep] = useState<number>(0);
 
   const isIntruder = session.role === "intruder";
   const isOrigin = session.role === "origin";
@@ -54,19 +60,15 @@ export function SimulationPage() {
 
     if (isOrigin) {
       if (!fileBits || fileBits.length === 0) return;
-
       stream.startStream(fileBits, errorRate);
-    } else if (isTarget || isIntruder) {
+    } else {
+      // Target and Intruder get a simulated stream
       const expectedLength = 512;
-
-      stream.startStream(
-        new Array(expectedLength).fill(0),
-        errorRate
-      );
+      stream.startStream(new Array(expectedLength).fill(0), errorRate);
     }
 
     streamStartedRef.current = true;
-  }, [phase, fileBits, mode, isIntruder, intruderSettings, stream]);
+  }, [phase, fileBits, mode, isOrigin, isTarget, isIntruder, intruderSettings, stream]);
 
   if (!session.sessionId) {
     navigate("/");
@@ -87,11 +89,12 @@ export function SimulationPage() {
     streamStartedRef.current = false;
     setBitStreamOpen(false);
     setFilePreviewOpen(false);
+    setShowIntruderPanel(false);
   };
 
   // ── Button visibility rules ──
 
-  // Bit stream: available for Origin + Target once transferring/done, and there are bits
+  // Bit stream: available for Origin + Target once transferring/done
   const canShowBitStream = !isIntruder && (isRunning || isDone);
 
   // File preview:
@@ -199,22 +202,59 @@ export function SimulationPage() {
               <button className="btn btn--secondary" onClick={handleReset}>
                 New Simulation
               </button>
-              <button className="btn btn--ghost" onClick={() => { handleReset(); navigate("/"); }}>
+
+              <button
+                className="btn btn--ghost"
+                onClick={() => { handleReset(); navigate("/"); }}
+              >
                 Leave Session
               </button>
+
+              {isIntruder && (
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => setShowIntruderPanel(true)}
+                >
+                  View Interception Analysis
+                </button>
+              )}
             </div>
           )}
 
           {(isRunning || isDone) && (
-            <div className="simulation-page__bottom">
-              <div className="simulation-page__circuit">
-                <CircuitView
-                  streaming={stream.streaming}
-                  totalBits={stream.totalBits}
-                  receiverBits={stream.receiverBits}
-                />
-              </div>
-            </div>
+            <>
+              {mode === "quantum" ? (
+                /* ── QUANTUM MODE ── */
+                <div className="simulation-page__bottom">
+                  <div className="simulation-page__circuit">
+                    <CircuitView
+                      streaming={stream.streaming}
+                      totalBits={stream.totalBits}
+                      receiverBits={stream.receiverBits}
+                      onActiveChange={(bitIndex, gateStep) => {
+                        setActiveBitIndex(bitIndex);
+                        setActiveGateStep(gateStep);
+                      }}
+                    />
+                  </div>
+
+                  <div className="simulation-page__bloch">
+                    <BlochSphereView
+                      bit={stream.receiverBits[activeBitIndex] ?? 0}
+                      gateStep={activeGateStep}
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* ── CLASSICAL MODE ── */
+                <div className="simulation-page__bottom simulation-page__bottom--full">
+                  <ClassicalProgress
+                    receiverBits={stream.receiverBits}
+                    totalBits={stream.totalBits}
+                  />
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>
@@ -246,7 +286,17 @@ export function SimulationPage() {
           }
         />
       </Panel>
-    </div>
 
+      <Panel
+        title="Interception Analysis"
+        open={showIntruderPanel}
+        onClose={() => setShowIntruderPanel(false)}
+      >
+        <IntruderPanelContent
+          receiverBits={stream.receiverBits}
+          totalBits={stream.totalBits}
+        />
+      </Panel>
+    </div>
   );
 }

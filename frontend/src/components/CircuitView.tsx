@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface CircuitViewProps {
   streaming: boolean;
   totalBits: number;
   receiverBits: (number | null)[];
+  onActiveChange?: (bitIndex: number, gateStep: number) => void;
 }
 
 type Particle = {
@@ -25,39 +26,84 @@ const Y_TARGET = 130;
 // Where interception happens (middle of circuit)
 const INTERCEPT_X = 300;
 
-export function CircuitView({ streaming, totalBits, receiverBits }: CircuitViewProps) {
-  const [particles, setParticles] = useState<Particle[]>([]);
+const MAX_VISIBLE = 40;
 
-  // Build particles from incoming bits
+export function CircuitView({ streaming, totalBits, receiverBits, onActiveChange }: CircuitViewProps) {
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const animRef = useRef<number | null>(null);
+  const onActiveChangeRef = useRef(onActiveChange);
+
+  // Keep the callback ref fresh without re-triggering the animation
+  useEffect(() => {
+    onActiveChangeRef.current = onActiveChange;
+  }, [onActiveChange]);
+
+  // Animate particles based on incoming bits
   useEffect(() => {
     if (totalBits === 0) return;
 
-    const newParticles: Particle[] = receiverBits.map((bit, i) => {
-      const receivedCount = receiverBits
-        .slice(0, i + 1)
-        .filter(b => b !== null).length;
+    const start = performance.now();
 
-      const progress = receivedCount / totalBits;
+    const animate = () => {
+      const now = performance.now();
+      const elapsed = now - start;
 
-      const alive = bit !== null;
+      // Only consider recent particles
+      const filled = receiverBits.filter(b => b !== null).length;
+      const startIndex = Math.max(0, filled - MAX_VISIBLE);
 
-      // Simple interception logic (visual)
-      const intercepted = !alive && progress > 0.3;
+      const visibleBits = receiverBits.slice(startIndex, startIndex + MAX_VISIBLE);
 
-      return {
-        id: i,
-        progress,
-        alive,
-        intercepted,
-      };
-    });
+      const newParticles: Particle[] = visibleBits.map((bit, localIndex) => {
+        const delay = localIndex * 60;
+        const duration = 1500;
 
-    setParticles(newParticles);
+        const t = Math.max(0, elapsed - delay);
+        const progress = Math.min(t / duration, 1);
+
+        const alive = bit !== null;
+        const intercepted = !alive && progress > 0.4;
+
+        return {
+          id: startIndex + localIndex,
+          progress,
+          alive,
+          intercepted,
+        };
+      });
+
+      setParticles(newParticles);
+
+      // Notify parent about the leading particle (via ref, not during render)
+      const leading = newParticles[newParticles.length - 1];
+      if (leading && onActiveChangeRef.current) {
+        const x = START_X + leading.progress * (END_X - START_X);
+        const gateStep =
+          x < 150 ? 0 :
+          x < 230 ? 1 :
+          x < 320 ? 2 :
+          x < 420 ? 3 :
+          4;
+        onActiveChangeRef.current(leading.id, gateStep);
+      }
+
+      animRef.current = requestAnimationFrame(animate);
+    };
+
+    animRef.current = requestAnimationFrame(animate);
+
+    // Cleanup: cancel animation frame on unmount or re-run
+    return () => {
+      if (animRef.current !== null) {
+        cancelAnimationFrame(animRef.current);
+        animRef.current = null;
+      }
+    };
   }, [receiverBits, totalBits]);
 
   return (
     <div className={`circuit ${streaming ? "circuit--active" : ""}`}>
-      <svg width="100%" height="100%" viewBox="0 0 600 180">
+      <svg width="100%" height="100%" viewBox={`0 0 ${WIDTH} 180`}>
 
         {/* ── Labels ───────────────────────── */}
         <text x="20" y={Y_ORIGIN - 20} className="circuit-label">Origin</text>
@@ -73,7 +119,8 @@ export function CircuitView({ streaming, totalBits, receiverBits }: CircuitViewP
         <line
           x1={INTERCEPT_X}
           y1={Y_ORIGIN}
-          x2={Y_TARGET}
+          x2={INTERCEPT_X}
+          y2={Y_TARGET}
           className="circuit__intercept-line"
         />
 
@@ -97,16 +144,19 @@ export function CircuitView({ streaming, totalBits, receiverBits }: CircuitViewP
         <rect x="460" y={Y_TARGET - 15} width="30" height="30" className="gate measure" />
         <text x="475" y={Y_TARGET + 5} textAnchor="middle">M</text>
 
-        {/* ── PARTICLES (render BEFORE gates for layering) ───── */}
+        {/* ── Particles ───── */}
         {particles.map(p => {
+          if (!p.alive && p.progress >= 1) return null;
+
           const x = START_X + p.progress * (END_X - START_X);
 
           // Choose which wire it's on
           let y = Y_ORIGIN;
-
-          if (p.intercepted && x > INTERCEPT_X - 10 && x < INTERCEPT_X + 10) {
+          if (p.progress < 0.5) {
+            y = Y_ORIGIN;
+          } else if (p.intercepted) {
             y = Y_INTRUDER;
-          } else if (x >= INTERCEPT_X) {
+          } else {
             y = Y_TARGET;
           }
 
