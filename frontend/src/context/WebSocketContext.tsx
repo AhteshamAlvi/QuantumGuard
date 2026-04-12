@@ -26,8 +26,15 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     if (!session.sessionId || !session.role) return;
 
     const key = `${session.sessionId}:${session.role}`;
-    // Prevent duplicate connections from strict mode
-    if (connectedKeyRef.current === key && wsRef.current?.readyState === WebSocket.OPEN) {
+    // Prevent duplicate connections from strict mode.
+    // Check for CONNECTING (0) or OPEN (1) — in strict mode the
+    // second effect fires before the first WS has finished opening.
+    if (
+      connectedKeyRef.current === key &&
+      wsRef.current &&
+      (wsRef.current.readyState === WebSocket.OPEN ||
+       wsRef.current.readyState === WebSocket.CONNECTING)
+    ) {
       return;
     }
 
@@ -47,9 +54,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onclose = () => {
-      setConnected(false);
-      // Only clear ref if this is still the active connection
+      // Only update state if this is still the active connection.
+      // Prevents a stale WS1.onclose from overriding WS2.onopen.
       if (wsRef.current === ws) {
+        setConnected(false);
         wsRef.current = null;
       }
     };

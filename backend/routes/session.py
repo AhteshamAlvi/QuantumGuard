@@ -13,13 +13,16 @@ async def create_session():
     session = session_manager.create_session()
     return {"session_id": session.session_id}
 
-# Join session endpoint
+# Join session endpoint — returns which roles are already taken
 @router.post("/sessions/{session_id}/join")
 async def join_session(session_id: str):
     session = session_manager.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    return {"success": True}
+    return {
+        "success": True,
+        "devices": session_manager.get_device_list(session_id),
+    }
 
 
 @router.get("/sessions/{session_id}")

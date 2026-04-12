@@ -1,16 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSession } from "../hooks/useSession";
 import { RoleSelect } from "../components/RoleSelect";
+import type { Role } from "../types";
 
 export function SessionPage() {
   const navigate = useNavigate();
-  const { session, loading, error, createSession, joinSession, selectRole } = useSession();
+  const { session, loading, error, takenRoles, createSession, joinSession, selectRole } = useSession();
   const [joinCode, setJoinCode] = useState("");
   const [isCreator, setIsCreator] = useState(false);
 
   const hasSession = !!session.sessionId;
   const canProceed = hasSession && !!session.role;
+
+  // Auto-select the only remaining role when joining
+  const allRoles: Role[] = ["origin", "target", "intruder"];
+  const excludedRoles: Role[] = ["origin", ...takenRoles];
+  const availableRoles = allRoles.filter((r) => !excludedRoles.includes(r));
+
+  useEffect(() => {
+    if (!isCreator && hasSession && !session.role && availableRoles.length === 1) {
+      selectRole(availableRoles[0]);
+    }
+  }, [isCreator, hasSession, session.role, availableRoles, selectRole]);
 
   async function handleCreate() {
     await createSession();
@@ -88,7 +100,7 @@ export function SessionPage() {
             selected={session.role}
             onSelect={selectRole}
             disabled={loading}
-            excludeOrigin
+            excludeRoles={["origin", ...takenRoles]}
           />
 
           <button

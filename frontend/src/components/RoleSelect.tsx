@@ -10,11 +10,12 @@ interface Props {
   selected: Role | null;
   onSelect: (role: Role) => void;
   disabled?: boolean;
-  excludeOrigin?: boolean;
+  /** Roles to hide from the selection (e.g. already-taken roles) */
+  excludeRoles?: Role[];
 }
 
-export function RoleSelect({ selected, onSelect, disabled, excludeOrigin }: Props) {
-  const roles = excludeOrigin ? ROLES.filter((r) => r.value !== "origin") : ROLES;
+export function RoleSelect({ selected, onSelect, disabled, excludeRoles = [] }: Props) {
+  const roles = ROLES.filter((r) => !excludeRoles.includes(r.value));
 
   return (
     <div className="role-select">
