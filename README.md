@@ -293,7 +293,7 @@ The backend generates a sequence of qubits:
   \theta_i \in {Z, X}
   $$
 
-Each pair $$ (b_i, \theta_i) $$ defines a qubit.
+Each pair $(b_i, \theta_i)$ defines a qubit.
 
 These qubits are not transmitted as physical quantum states, but are **modeled probabilistically** using quantum rules.
 
