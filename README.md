@@ -10,15 +10,30 @@ Built for hackathons and educational demos. Runs on three browser tabs or three 
 
 ## Table of Contents
 
-- [The Concept](#the-concept)
-- [How It Works](#how-it-works)
-- [What Each Role Sees](#what-each-role-sees)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [License](#license)
+- [QuantumGuard](#quantumguard)
+  - [Table of Contents](#table-of-contents)
+  - [The Concept](#the-concept)
+  - [How It Works](#how-it-works)
+    - [Phase 1 — Key Exchange](#phase-1--key-exchange)
+    - [Phase 2 — File Transfer](#phase-2--file-transfer)
+  - [What Each Role Sees](#what-each-role-sees)
+    - [Origin](#origin)
+    - [Target](#target)
+    - [Intruder](#intruder)
+  - [Getting Started](#getting-started)
+  - [Usage](#usage)
+    - [Local testing (single machine)](#local-testing-single-machine)
+    - [Multi-device demo](#multi-device-demo)
+    - [What to try](#what-to-try)
+  - [Project Structure](#project-structure)
+  - [Architecture](#architecture)
+    - [Communication flow](#communication-flow)
+    - [BB84 implementation](#bb84-implementation)
+    - [Key constants](#key-constants)
+    - [WebSocket message protocol](#websocket-message-protocol)
+  - [Tech Stack](#tech-stack)
+  - [License](#license)
+  - [Author](#author)
 
 ---
 
@@ -86,41 +101,14 @@ Only happens after a key is established.
 
 ## Getting Started
 
-### Prerequisites
+QuantumGuard is deployed as a full-stack web application, with the frontend and backend hosted separately and connected over the internet.
 
-- **Node.js** v18+
-- **Python** 3.10+
-- **Qiskit** (installed automatically with pip)
+The frontend is built with React and Vite and is deployed on Vercel, providing a fast, accessible interface that runs directly in the browser. The backend is a Python FastAPI service hosted on Render, where it handles simulation logic, session management, and protocol execution.
 
-### 1. Clone the repository
+When a user opens the application, the frontend communicates with the deployed backend via HTTPS requests. The backend may take a few seconds to respond on the first request due to cold starts on the free hosting tier, but will run normally afterward.
 
-```bash
-git clone https://github.com/AhteshamAlvi/QuantumGuard.git
-cd QuantumGuard
-```
+No local setup, installation, or cloning is required—users can access the full application directly through the deployed link: `https://quantum-guard-eight.vercel.app/` .
 
-### 2. Start the backend
-
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-pip install qiskit qiskit-aer    # Quantum simulation engine
-uvicorn app:app --reload
-```
-
-The API runs at `http://localhost:8000`. Health check: `GET /api/health`.
-
-### 3. Start the frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The app runs at `http://localhost:5173`.
 
 ---
 
@@ -129,7 +117,7 @@ The app runs at `http://localhost:5173`.
 ### Local testing (single machine)
 
 1. Start both the backend and frontend.
-2. Open **three browser tabs** at `http://localhost:5173`.
+2. Open **three browser tabs** at `https://quantum-guard-eight.vercel.app/`.
 3. **Tab 1**: Click "Create Session" — you're assigned the Origin role. Note the 6-character session code.
 4. **Tab 2**: Click "Join Session", enter the code. Pick the **Target** role.
 5. **Tab 3**: Join with the same code. You'll be auto-assigned **Intruder** (the last remaining role).
@@ -139,7 +127,7 @@ The app runs at `http://localhost:5173`.
 ### Multi-device demo
 
 1. Run both servers on a host machine.
-2. On three devices connected to the same network, open `http://<host-ip>:5173`.
+2. On three devices connected to the same network, open `https://quantum-guard-eight.vercel.app/`.
 3. Create and join the session as above.
 
 ### What to try
