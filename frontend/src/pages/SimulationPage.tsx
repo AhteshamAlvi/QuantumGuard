@@ -41,9 +41,12 @@ export function SimulationPage() {
   const isOrigin = session.role === "origin";
   const isTarget = session.role === "target";
 
-  // Reactively start the bit stream when phase transitions to "transferring".
+  // Start the bit stream animation as soon as key_exchange begins
+  // (so the circuit + Bloch sphere are active during the entire simulation).
   useEffect(() => {
-    if (phase !== "transferring") {
+    const shouldStream = phase === "key_exchange" || phase === "transferring";
+
+    if (!shouldStream) {
       streamStartedRef.current = false;
       return;
     }
@@ -59,10 +62,12 @@ export function SimulationPage() {
           : 0.02;
 
     if (isOrigin) {
-      if (!fileBits || fileBits.length === 0) return;
-      stream.startStream(fileBits, errorRate);
+      // During key_exchange, fileBits might not be ready yet — use placeholder
+      const bits = fileBits && fileBits.length > 0
+        ? fileBits
+        : new Array(512).fill(0).map(() => Math.round(Math.random()));
+      stream.startStream(bits, errorRate);
     } else {
-      // Target and Intruder get a simulated stream
       const expectedLength = 512;
       stream.startStream(new Array(expectedLength).fill(0), errorRate);
     }

@@ -1288,7 +1288,7 @@
 
 .circuit {
   width: 100%;
-  height: 240px;
+  height: 260px;
   position: relative;
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-md);
@@ -1296,7 +1296,7 @@
   box-shadow:
     inset 0 0 40px rgba(139, 92, 246, 0.04),
     0 0 30px rgba(139, 92, 246, 0.08);
-  overflow: visible;
+  overflow: hidden;
 }
 
 /* ── Wires (3 channels: Origin, Intruder, Target) ───────────── */
@@ -1432,29 +1432,12 @@
   animation: circuit-pulse 2.5s ease-in-out infinite;
 }
 
-/* ── Scanline Overlay ─────────────────── */
-
-.circuit::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(
-      180deg,
-      transparent 0%,
-      rgba(139, 92, 246, 0.03) 50%,
-      transparent 100%
-    );
-  background-size: 100% 6px;
-  animation: scan 4s linear infinite;
-  pointer-events: none;
-  opacity: 0.4;
-}
+/* Scanline overlay removed — canvas-based circuit handles its own rendering */
 
 .simulation-page__bloch {
-  width: 280px;
-  min-width: 280px;
-  height: 280px;
+  width: 300px;
+  min-width: 300px;
+  height: 300px;
   background: linear-gradient(145deg, var(--gray-900), rgba(15, 10, 30, 0.95));
   border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: var(--radius-md);
@@ -1464,6 +1447,7 @@
   box-shadow:
     inset 0 0 30px rgba(139, 92, 246, 0.06),
     0 0 20px rgba(139, 92, 246, 0.1);
+  user-select: none;
 }
 
 /* ── Bloch Sphere ────────────────────────── */

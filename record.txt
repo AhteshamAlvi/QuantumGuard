@@ -1,4 +1,0 @@
-Ok, so were going to assume the following scenario. An EXTREMELY important file. It must be sent no matter what. There is no abort option. If the file at the end is decrypted more than ____%, it is considered a failure. (What percent would make sense? What percent threshold does a file become useful? Assume that all files sent is plaintext. What % needs to be stolen for it to be considered a failure?)
-The sender is only successful if the key is sent to the receiver and they can use it to decrypt the file, while the interceptor gets AT MOST something completely unusable. The way they do this is by resending the key pieces that they discover are compromised.
-
-The Interceptor on the other hand is successful if they get above that % threshold, of information. 
