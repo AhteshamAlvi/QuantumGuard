@@ -7,6 +7,7 @@ QuantumGuard is a full-stack web application that visualizes *why* quantum crypt
 Built for hackathons and educational demos. Runs on three browser tabs or three separate devices.
 
 The app runs at <a href="https://quantum-guard-eight.vercel.app/" target="_blank" rel="noopener noreferrer">https://quantum-guard-eight.vercel.app/</a>.
+
 ---
 
 ## Table of Contents
