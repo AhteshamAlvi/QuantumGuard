@@ -145,7 +145,7 @@ npm install
 npm run dev
 ```
 
-The app runs at `https://quantum-guard-eight.vercel.app/`.
+The app runs at <a href="https://quantum-guard-eight.vercel.app/">`https://quantum-guard-eight.vercel.app/`</a>.
 
 ---
 
